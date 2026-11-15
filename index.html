@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Sukoon</title>
 <meta name="theme-color" content="#12222a">
 <link rel="manifest" href="manifest.json">
@@ -17,13 +17,15 @@
     --bg: #e9edf2; --mine: #dbe7fb; --theirs: #ffffff; --ink: #1c2430; --muted: #6b7686; --line: #c9d1dc;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { height: 100%; margin: 0; overscroll-behavior: none; }
+  html, body { height: 100%; margin: 0; overscroll-behavior: none; overflow: hidden; }
+  /* The page itself never scrolls: the app always fills exactly the part of the screen above the keyboard */
+  body { position: fixed; top: 0; left: 0; right: 0; bottom: 0; }
   body { font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: var(--ink); background: var(--bg); font-size: 16px; }
   button, input, textarea { font: inherit; }
   .hidden { display: none !important; }
 
   /* Sign-in */
-  #login { min-height: 100%; display: flex; align-items: center; justify-content: center; padding: 24px; }
+  #login { height: var(--vvh, 100%); overflow-y: auto; transform: translateY(var(--vvt, 0px)); display: flex; align-items: center; justify-content: center; padding: 24px; }
   .card { width: 100%; max-width: 360px; background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 6px 24px rgba(31,47,74,.12); }
   .card h1 { margin: 0 0 4px; font-size: 22px; color: var(--navy); }
   .card p { margin: 0 0 18px; color: var(--muted); font-size: 14px; }
@@ -35,10 +37,11 @@
   #who2 button.on { background: var(--navy); border-color: var(--navy); color: #fff; }
   .primary { width: 100%; margin-top: 18px; padding: 13px; border: 0; border-radius: 10px; background: var(--navy); color: #fff; font-weight: 600; cursor: pointer; }
   .primary:disabled { opacity: .6; }
+  .ver { margin-top: 14px; font-size: 11px; color: var(--muted); text-align: center; }
   #loginErr { color: #b3261e; font-size: 14px; min-height: 20px; margin-top: 10px; overflow-wrap: anywhere; }
 
   /* Chat */
-  #chat { height: 100%; height: 100dvh; display: flex; flex-direction: column; max-width: 760px; margin: 0 auto; background: var(--bg); }
+  #chat { height: 100%; height: var(--vvh, 100dvh); transform: translateY(var(--vvt, 0px)); display: flex; flex-direction: column; max-width: 760px; margin: 0 auto; background: var(--bg); }
   header { background: var(--navy); color: #fff; padding: calc(10px + env(safe-area-inset-top)) 10px 10px 14px; display: flex; align-items: center; gap: 8px; border-bottom: 3px solid var(--amber); }
   .avatar { flex: none; width: 40px; height: 40px; border-radius: 50%; background: var(--amber); color: var(--navy); font-weight: 700; font-size: 18px; display: flex; align-items: center; justify-content: center; margin-right: 4px; }
   header .grow { flex: 1; min-width: 0; }
@@ -134,7 +137,7 @@
   /* Overlays */
   #viewer { position: fixed; inset: 0; background: rgba(0,0,0,.92); display: flex; align-items: center; justify-content: center; z-index: 30; cursor: zoom-out; }
   #viewer img { max-width: 100%; max-height: 100%; }
-  .shade { position: fixed; inset: 0; background: rgba(15,23,36,.45); z-index: 20; display: flex; align-items: flex-end; justify-content: center; }
+  .shade { position: fixed; left: 0; right: 0; top: var(--vvt, 0px); height: var(--vvh, 100%); background: rgba(15,23,36,.45); z-index: 20; display: flex; align-items: flex-end; justify-content: center; }
   #sheet .box, #attach .box, #stk .box { width: 100%; max-width: 760px; background: #fff; border-radius: 18px 18px 0 0; padding: 14px 14px calc(14px + env(safe-area-inset-bottom)); }
   #emojis { display: flex; justify-content: space-between; margin-bottom: 10px; }
   #emojis button { border: 0; background: #f1f3f6; border-radius: 50%; width: 46px; height: 46px; font-size: 24px; cursor: pointer; }
@@ -262,6 +265,7 @@
     <input id="passIn" type="password" autocomplete="off" required>
     <button class="primary" id="loginBtn" type="submit">Enter chat</button>
     <div id="loginErr"></div>
+    <div class="ver"></div>
   </form>
 </div>
 
@@ -415,6 +419,7 @@
         <div id="profMsg"></div>
         <label>Colour theme (only on this phone)</label>
         <div id="themes"></div>
+        <div class="ver"></div>
       </div>
     </div>
   </div>
@@ -440,7 +445,8 @@
   // Key for the GIPHY GIF search (can also be set as window.GIPHY_KEY in config.js)
   var GIPHY_KEY = window.GIPHY_KEY || 'o9sMkdws363zYPGxDocg7RB3TNJJbMff', gifSeq = 0, gifLoaded = false;
   var BIG_EMOJI = ['\uD83D\uDE00','\uD83D\uDE02','\uD83E\uDD23','\uD83D\uDE0A','\uD83D\uDE0D','\uD83E\uDD70','\uD83D\uDE18','\uD83D\uDE0E','\uD83E\uDD14','\uD83D\uDE34','\uD83D\uDE2D','\uD83D\uDE21','\uD83D\uDE31','\uD83E\uDD73','\uD83D\uDE07','\uD83D\uDE48','\uD83D\uDC4D','\uD83D\uDC4E','\uD83D\uDC4F','\uD83D\uDE4F','\uD83D\uDCAA','\uD83E\uDD1D','\uD83D\uDC4B','\uD83E\uDD32','\u2764\uFE0F','\uD83D\uDC94','\uD83D\uDD25','\u2B50','\uD83C\uDF89','\uD83C\uDF39','\u2615','\uD83C\uDF19','\u2705','\u274C','\uD83D\uDCAF','\uD83C\uDF81'];
-  var pendingFile = null, MAX_FILE = 10 * 1024 * 1024;
+  var pendingFile = null, MAX_FILE_MB = 25, MAX_FILE = MAX_FILE_MB * 1024 * 1024;
+  var APP_VERSION = '15 Nov, version 9'; // shown on the sign-in and Profiles screens, to check both phones match
   var notifyOn = false, unread = 0, audioCtx = null;
   var typedAt = 0, typingSent = false, otherTyping = false;
   var swipe = null, swipedAt = 0;
@@ -1719,7 +1725,7 @@
       delete unsent[id]; paintStatus();
     }).catch(function (err) {
       delete unsent[id]; paintStatus();
-      setStatus('Not sent: ' + errText(err));
+      setStatus('Not sent: ' + errText(err) + '. Please sign out, sign in again and resend.');
     });
   }
 
@@ -1982,6 +1988,28 @@
     if (ev.key === 'Enter' && !ev.shiftKey && !('ontouchstart' in window)) { ev.preventDefault(); send(); }
   });
   $('sendBtn').addEventListener('click', send);
+  // On a phone, sending must not close the keyboard: handle the tap ourselves so the box keeps focus
+  $('sendBtn').addEventListener('touchend', function (ev) { ev.preventDefault(); send(); msgIn.focus(); });
+
+  // Keeps the app sized to the visible screen, so the message box sits right on top of the keyboard
+  (function () {
+    var vv = window.visualViewport;
+    if (!vv) return;
+    function fit() {
+      var list = $('list');
+      var near = list.scrollHeight - list.scrollTop - list.clientHeight < 160;
+      var st = document.documentElement.style;
+      st.setProperty('--vvh', Math.round(vv.height) + 'px');
+      st.setProperty('--vvt', Math.round(vv.offsetTop) + 'px');
+      if (window.scrollY || window.scrollX) window.scrollTo(0, 0);
+      if (near) scrollDown();
+    }
+    vv.addEventListener('resize', fit);
+    vv.addEventListener('scroll', fit);
+    window.addEventListener('orientationchange', function () { setTimeout(fit, 300); });
+    msgIn.addEventListener('focus', function () { setTimeout(fit, 50); setTimeout(fit, 350); });
+    fit();
+  })();
 
   // Text, stickers and GIFs go straight to Firebase. Pictures, voice messages and documents
   // are first saved to Google Drive (shown as "Sending…"), then the message is written.
@@ -2144,7 +2172,7 @@
   $('docIn').addEventListener('change', function () {
     var f = this.files && this.files[0];
     if (!f) return;
-    if (f.size > MAX_FILE) { clearDoc(); setStatus('That document is ' + sizeLabel(f.size) + '. The limit is 10 MB.'); return; }
+    if (f.size > MAX_FILE) { clearDoc(); setStatus('That document is ' + sizeLabel(f.size) + '. The limit is ' + MAX_FILE_MB + ' MB.'); return; }
     if (!f.size) { clearDoc(); setStatus('That document is empty.'); return; }
     pendingFile = f;
     $('docName').textContent = f.name + ' (' + sizeLabel(f.size) + ')';
@@ -2224,6 +2252,8 @@
 
   // ---------- Start ----------
   (function () {
+    var vs = document.querySelectorAll('.ver');
+    for (var vi = 0; vi < vs.length; vi++) vs[vi].textContent = 'Sukoon \u00B7 ' + APP_VERSION;
     notifyOn = false; // notifications are switched off in this version
     // config.js may hold the block exactly as copied from Firebase (const firebaseConfig = {...})
     var cfg = window.FIREBASE_CONFIG || (typeof firebaseConfig !== 'undefined' ? firebaseConfig : null);
