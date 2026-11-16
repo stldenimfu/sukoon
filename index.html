@@ -158,6 +158,33 @@
   .item span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
   .item button { flex: none; border: 0; background: #edf0f4; border-radius: 8px; padding: 6px 10px; font-size: 13px; cursor: pointer; }
   .note { text-align: center; color: var(--muted); font-size: 14px; margin-top: 30px; padding: 0 20px; }
+  /* Hold a message to open its menu, so text is not selected by the press */
+  .bubble { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  .bubble img { -webkit-touch-callout: none; -webkit-user-drag: none; }
+  .edited { margin-right: 6px; font-style: italic; }
+  .stat { letter-spacing: -2px; margin-left: 5px; }
+  .stat.seen { color: #53bdeb !important; }
+  #pinsBtn { position: relative; }
+  #pinBadge { position: absolute; top: 2px; right: 0; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--amber); color: var(--onaccent); font-size: 10px; font-weight: 700; line-height: 16px; text-align: center; }
+  #list { background-image: var(--tex, none); background-size: 180px 180px; }
+  /* Location */
+  .loc { display: block; width: 240px; max-width: 100%; margin: 2px 0 4px; border-radius: 10px; overflow: hidden; background: rgba(255,255,255,.08); color: inherit; text-decoration: none; }
+  .loc iframe { display: block; width: 100%; height: 150px; border: 0; pointer-events: none; }
+  .loc div { padding: 7px 10px 8px; }
+  .loc b { display: block; font-size: 14px; }
+  .loc small { display: block; font-size: 12px; color: var(--muted); }
+  /* Camera */
+  #cam { position: fixed; left: 0; right: 0; top: var(--vvt, 0px); height: var(--vvh, 100%); background: #000; z-index: 40; display: flex; align-items: center; justify-content: center; }
+  #camVideo { width: 100%; height: 100%; object-fit: cover; }
+  #camVideo.front { transform: scaleX(-1); }
+  #camClose { position: absolute; top: calc(12px + env(safe-area-inset-top)); left: 12px; width: 44px; height: 44px; border-radius: 50%; border: 0; background: rgba(0,0,0,.45); color: #fff; font-size: 28px; line-height: 1; cursor: pointer; }
+  #camBar { position: absolute; left: 0; right: 0; bottom: 0; padding: 18px 24px calc(22px + env(safe-area-inset-bottom)); display: flex; align-items: center; justify-content: space-between; background: linear-gradient(transparent, rgba(0,0,0,.6)); }
+  #camGallery, #camFlip { width: 72px; border: 0; background: none; color: #fff; font-size: 12px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  #camGallery svg, #camFlip svg { width: 30px; height: 30px; }
+  #camShot { width: 74px; height: 74px; border-radius: 50%; border: 5px solid #fff; background: rgba(255,255,255,.25); cursor: pointer; }
+  #camShot:active { background: rgba(255,255,255,.7); }
+  #themes button { font-size: 11px; }
+
   /* Profiles */
   .avatar { background-size: cover; background-position: center; cursor: pointer; }
   header .grow { cursor: pointer; }
@@ -284,7 +311,7 @@
     <button class="hbtn" id="searchBtn" type="button" aria-label="Search messages">
       <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
     </button>
-    <button class="hbtn" id="pinsBtn" type="button" aria-label="Pinned messages">
+    <button class="hbtn" id="pinsBtn" type="button" aria-label="Pinned messages"><span id="pinBadge" class="hidden"></span>
       <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6l-1 6 3 3H7l3-3z"/><path d="M12 13v7"/></svg>
     </button>
     <button id="logoutBtn" type="button">Sign out</button>
@@ -342,6 +369,8 @@
     <div id="emojis"></div>
     <button class="act" id="actReply" type="button">Reply</button>
     <button class="act" id="actPin" type="button">Pin</button>
+    <button class="act" id="actInfo" type="button">Info (sent, delivered, seen times)</button>
+    <button class="act" id="actEdit" type="button">Edit</button>
     <button class="act" id="actCopy" type="button">Copy text</button>
     <button class="act" id="actSticker" type="button">Add to stickers</button>
     <button class="act" id="actDelete" type="button">Delete (you can select more)</button>
@@ -353,8 +382,9 @@
 <div id="attach" class="shade hidden">
   <div class="box">
     <button class="act" id="picBtn" type="button">Photo or GIF from the phone</button>
-    <button class="act" id="capBtn" type="button">Take a photo with the camera</button>
+    <button class="act" id="capBtn" type="button">Open the camera</button>
     <button class="act" id="docBtn" type="button">Document</button>
+    <button class="act" id="locBtn" type="button">Share my location</button>
     <button class="act" id="attClose" type="button">Cancel</button>
   </div>
 </div>
@@ -391,6 +421,23 @@
       <button type="submit">Search</button>
     </form>
     <div id="panelList"></div>
+  </div>
+</div>
+
+<!-- In-app camera: live view with a gallery button beside the shutter -->
+<div id="cam" class="hidden">
+  <video id="camVideo" autoplay playsinline muted></video>
+  <button id="camClose" type="button" aria-label="Close the camera">&times;</button>
+  <div id="camBar">
+    <button id="camGallery" type="button" aria-label="Choose from the gallery">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="M21 15l-5-5L5 19"/></svg>
+      <span>Gallery</span>
+    </button>
+    <button id="camShot" type="button" aria-label="Take the photo"></button>
+    <button id="camFlip" type="button" aria-label="Switch between front and back camera">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9a8 8 0 0 1 14-3l2 2M20 15a8 8 0 0 1-14 3l-2-2"/><path d="M20 4v4h-4M4 20v-4h4"/></svg>
+      <span>Flip</span>
+    </button>
   </div>
 </div>
 
@@ -446,11 +493,12 @@
   var GIPHY_KEY = window.GIPHY_KEY || 'o9sMkdws363zYPGxDocg7RB3TNJJbMff', gifSeq = 0, gifLoaded = false;
   var BIG_EMOJI = ['\uD83D\uDE00','\uD83D\uDE02','\uD83E\uDD23','\uD83D\uDE0A','\uD83D\uDE0D','\uD83E\uDD70','\uD83D\uDE18','\uD83D\uDE0E','\uD83E\uDD14','\uD83D\uDE34','\uD83D\uDE2D','\uD83D\uDE21','\uD83D\uDE31','\uD83E\uDD73','\uD83D\uDE07','\uD83D\uDE48','\uD83D\uDC4D','\uD83D\uDC4E','\uD83D\uDC4F','\uD83D\uDE4F','\uD83D\uDCAA','\uD83E\uDD1D','\uD83D\uDC4B','\uD83E\uDD32','\u2764\uFE0F','\uD83D\uDC94','\uD83D\uDD25','\u2B50','\uD83C\uDF89','\uD83C\uDF39','\u2615','\uD83C\uDF19','\u2705','\u274C','\uD83D\uDCAF','\uD83C\uDF81'];
   var pendingFile = null, MAX_FILE_MB = 25, MAX_FILE = MAX_FILE_MB * 1024 * 1024;
-  var APP_VERSION = '15 Nov, version 9'; // shown on the sign-in and Profiles screens, to check both phones match
+  var APP_VERSION = '16 Nov, version 11'; // shown on the sign-in and Profiles screens, to check both phones match
   var notifyOn = false, unread = 0, audioCtx = null;
   var typedAt = 0, typingSent = false, otherTyping = false;
   var swipe = null, swipedAt = 0;
   var selecting = false, selected = {}, delArmed = 0;
+  var heldAt = 0, sheetAt = 0, editing = null, camStream = null, camFacing = 'environment';
   var profiles = {};
   // Colour themes: [accent, my bubble, background, header, their bubble, surface, soft, line, name colour, link, seen, my-reaction, select bar]
   var THEMES = {
@@ -459,7 +507,13 @@
     'Lavender': ['#b3a4e0', '#3a3266', '#100f18', '#1a1828', '#201e2d', '#1a1826', '#282538', '#322f45', '#c5b9ea', '#c0b3f0', '#b9a9ee', '#2c2750', '#2e2852'],
     'Sage': ['#9cc0a0', '#2c4a38', '#0e1411', '#16211b', '#1b2620', '#161f1a', '#223028', '#2b3a31', '#b4d2b7', '#a9d3bf', '#a3cfa8', '#233a2c', '#24402f'],
     'Graphite': ['#c9d1d9', '#33404d', '#0f1114', '#181b20', '#1c2026', '#171a1f', '#252a31', '#30363d', '#d5dbe1', '#9ecbff', '#9ecbff', '#2b323b', '#2a3038'],
-    'Rose dusk': ['#d8a7b5', '#5a3040', '#140f12', '#21171c', '#261c21', '#1f171b', '#30232a', '#3b2c33', '#e3bcc7', '#e8b4c4', '#e0aabb', '#452a35', '#4a2c38']
+    'Rose dusk': ['#d8a7b5', '#5a3040', '#140f12', '#21171c', '#261c21', '#1f171b', '#30232a', '#3b2c33', '#e3bcc7', '#e8b4c4', '#e0aabb', '#452a35', '#4a2c38'],
+    'Midnight': ['#7fd0e6', '#163a56', '#070c14', '#0d1522', '#131d2c', '#0f1826', '#1a2738', '#243246', '#a3deee', '#8fd6f0', '#7fd0e6', '#143348', '#15374e'],
+    'Classic green': ['#6fcf97', '#17513f', '#0b1412', '#12211c', '#18261f', '#13201b', '#1f3129', '#283c33', '#93dcb1', '#8fd8c4', '#7fd3a2', '#16402f', '#184634'],
+    'Mocha': ['#d2b48c', '#4d3b2c', '#13100d', '#1f1a15', '#261f19', '#1e1915', '#30281f', '#3c3228', '#e0c8a6', '#e6c79a', '#d8bc92', '#3f3023', '#443427'],
+    'Plum': ['#cf9fd6', '#4a2a55', '#120e14', '#1e1622', '#251b29', '#1d1521', '#2e2233', '#392b3f', '#dfb8e4', '#dcaee6', '#d3a5dc', '#3c2346', '#40264b'],
+    'Steel': ['#a8b8c8', '#2f3f4f', '#0d1013', '#161b20', '#1b2127', '#151a1f', '#232a32', '#2e363f', '#c0ccd8', '#a9c8e8', '#b0c0d0', '#27333f', '#293643'],
+    'Sand': ['#e3cfa4', '#4a4230', '#12110d', '#1d1b15', '#24211a', '#1c1a15', '#2d2a20', '#393528', '#ecdcb8', '#ead9a8', '#e0cf9f', '#3d3626', '#423a29']
   };
   var THEME_VARS = ['--amber', '--mine', '--bg', '--navy', '--theirs', '--surface', '--soft', '--line', '--navy-2', '--link', '--seen', '--chipme', '--selbar'];
   var themeName = 'Dusk blue';
@@ -472,6 +526,14 @@
     var m = /^#(..)(..)(..)$/.exec(t[0]);
     st.setProperty('--selrow', 'rgba(' + parseInt(m[1], 16) + ',' + parseInt(m[2], 16) + ',' + parseInt(m[3], 16) + ',.24)');
     var meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.setAttribute('content', t[3]);
+    // A faint doodle pattern behind the messages, drawn in the theme's own colour
+    var tex = "<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180' fill='none' stroke='" + t[0] + "' stroke-opacity='.085' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'>" +
+      "<circle cx='24' cy='28' r='7'/><path d='M96 36c-6-9-18-2-10 7l10 9 10-9c8-9-4-16-10-7z'/><path d='M130 22q6-8 12 0t12 0'/>" +
+      "<path d='M40 86v12M34 92h12'/><path d='M108 84h26a6 6 0 0 1 6 6v10a6 6 0 0 1-6 6h-15l-8 7v-7h-3a6 6 0 0 1-6-6v-10a6 6 0 0 1 6-6z'/>" +
+      "<path d='M162 70v12M156 73l12 6M168 73l-12 6'/><path d='M18 142a12 12 0 0 1 24 0'/><path d='M84 138a12 12 0 1 0 12 12 9 9 0 0 1-12-12z'/>" +
+      "<path d='M140 132l10 16h-20z'/><path d='M52 164q5-6 10 0t10 0t10 0'/><path d='M66 52l4 8 8 1-6 6 2 8-8-4-8 4 2-8-6-6 8-1z'/>" +
+      "<circle cx='150' cy='104' r='1.6'/><circle cx='70' cy='116' r='1.6'/><circle cx='12' cy='70' r='1.6'/><circle cx='118' cy='168' r='1.6'/><circle cx='170' cy='160' r='5'/></svg>";
+    st.setProperty('--tex', 'url("data:image/svg+xml,' + encodeURIComponent(tex) + '")');
     var bs = document.querySelectorAll('#themes button');
     for (var i = 0; i < bs.length; i++) bs[i].className = bs[i].getAttribute('data-theme') === name ? 'on' : '';
   }
@@ -613,7 +675,7 @@
   }
 
   function showLogin(msg) {
-    closeSheet(); closePanel(); endSelect(); closeStk(); closeAttach(); closeProf();
+    closeSheet(); closePanel(); endSelect(); closeStk(); closeAttach(); closeProf(); closeCam();
     $('chat').classList.add('hidden');
     $('login').classList.remove('hidden');
     setPick(load('chatName'));
@@ -646,7 +708,7 @@
     items = []; byId = {}; otherName = ''; queue = [];
     pins = []; presence = null; otherTyping = false; typedAt = 0;
     noOlder = false; unsent = {}; searchAll = null; lastOwnId = 0;
-    setReply(null); paintPins();
+    editing = null; setReply(null); paintPins();
     var list = $('list');
     while (list.firstChild) list.removeChild(list.firstChild);
     var empty = document.createElement('div');
@@ -688,7 +750,7 @@
   }
 
   function snippet(m) {
-    return m.text ? String(m.text).slice(0, 140) : m.stk ? 'Sticker' : m.gif ? 'GIF' : m.pic ? 'Picture' : m.voice ? 'Voice message' : m.file ? 'Document: ' + m.file.name : '';
+    return m.text ? String(m.text).slice(0, 140) : m.stk ? 'Sticker' : m.gif ? 'GIF' : m.pic ? 'Picture' : m.voice ? 'Voice message' : m.file ? 'Document: ' + m.file.name : m.loc ? 'Location' : '';
   }
 
   // Turns web addresses inside a message into links that open in the browser
@@ -751,9 +813,11 @@
     if (m.gif) b.appendChild(makeGif(m.gif));
     if (m.voice) b.appendChild(makeVoice(m.voice));
     if (m.file) b.appendChild(makeFile(m.file));
+    if (m.loc) b.appendChild(makeLoc(m.loc));
     if (m.text) { var tx = document.createElement('div'); tx.className = 'text' + (isBigEmoji(m.text) ? ' big' : ''); fillText(tx, m.text); b.appendChild(tx); }
     var tm = document.createElement('div'); tm.className = 'time';
     var pm = document.createElement('span'); pm.className = 'pinmark'; tm.appendChild(pm);
+    if (m.ed) { var ed = document.createElement('span'); ed.className = 'edited'; ed.textContent = 'edited'; tm.appendChild(ed); }
     tm.appendChild(document.createTextNode(d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })));
     tm.title = d.toLocaleString();
     if (mine) {
@@ -764,12 +828,14 @@
     b.appendChild(tm);
     var rc = document.createElement('div'); rc.className = 'reacts'; b.appendChild(rc);
     paintReacts(rc, m);
-    // Tapping the bubble opens the menu (reactions, reply, pin, copy)
+    // Press and hold (or right-click on a computer) opens the menu; a plain tap only selects while deleting
     b.addEventListener('click', function (ev) {
       if (Date.now() - swipedAt < 400) return;
-      if (selecting) { ev.preventDefault(); toggleSel(m.id); return; }
-      if (ev.target.closest('a, img.pic, audio, .quote, .chip, .file, button')) return;
-      openSheet(m);
+      if (selecting) { ev.preventDefault(); toggleSel(m.id); }
+    });
+    b.addEventListener('contextmenu', function (ev) {
+      ev.preventDefault();
+      if (!selecting) openSheet(m);
     });
     var rb = document.createElement('button'); rb.type = 'button'; rb.className = 'rbtn';
     rb.setAttribute('aria-label', 'Reply to this message');
@@ -850,13 +916,17 @@
   }
 
   // Sent -> Delivered -> Seen on my own messages
+  // Ticks only: one = sent, two = delivered, two blue = seen (a small clock while sending)
   function paintStatus() {
     var els = document.querySelectorAll('.stat');
     for (var i = 0; i < els.length; i++) {
       var id = Number(els[i].getAttribute('data-id'));
-      var label = unsent[id] ? 'Sending\u2026' : id <= otherSeen ? '\u2713\u2713 Seen' : id <= otherDelivered ? '\u2713\u2713 Delivered' : '\u2713 Sent';
+      var seen = !unsent[id] && id <= otherSeen;
+      var label = unsent[id] ? '\u25F7' : seen || id <= otherDelivered ? '\u2713\u2713' : '\u2713';
+      var say = unsent[id] ? 'Sending' : seen ? 'Seen' : id <= otherDelivered ? 'Delivered' : 'Sent';
       if (els[i].textContent !== label) els[i].textContent = label;
-      els[i].className = 'stat' + (!unsent[id] && id <= otherSeen ? ' seen' : '');
+      els[i].className = 'stat' + (seen ? ' seen' : '');
+      els[i].title = say; els[i].setAttribute('aria-label', say);
     }
   }
 
@@ -992,6 +1062,23 @@
     return wait;
   }
 
+  // ---------- Location inside messages ----------
+  function makeLoc(loc) {
+    var lat = Number(loc.lat), lng = Number(loc.lng), d = 0.004;
+    var a = document.createElement('a'); a.className = 'loc'; a.target = '_blank'; a.rel = 'noopener noreferrer';
+    a.href = 'https://www.google.com/maps?q=' + lat + ',' + lng;
+    if (!(Math.abs(lat) <= 90 && Math.abs(lng) <= 180)) { a.removeAttribute('href'); a.textContent = 'Location'; return a; }
+    var f = document.createElement('iframe'); f.loading = 'lazy'; f.title = 'Map'; f.setAttribute('tabindex', '-1');
+    f.src = 'https://www.openstreetmap.org/export/embed.html?bbox=' + (lng - d) + ',' + (lat - d) + ',' + (lng + d) + ',' + (lat + d) + '&layer=mapnik&marker=' + lat + ',' + lng;
+    var box = document.createElement('div');
+    var t = document.createElement('b'); t.textContent = 'Location';
+    var sm = document.createElement('small');
+    sm.textContent = (loc.acc ? 'within about ' + Math.round(loc.acc) + ' m \u00B7 ' : '') + 'tap to open in Maps';
+    box.appendChild(t); box.appendChild(sm); a.appendChild(f); a.appendChild(box);
+    a.addEventListener('click', function (ev) { if (selecting || Date.now() - heldAt < 700) ev.preventDefault(); });
+    return a;
+  }
+
   // ---------- Documents inside messages ----------
   function sizeLabel(n) {
     n = Number(n) || 0;
@@ -1124,11 +1211,15 @@
     for (var i = 0; i < bs.length; i++) bs[i].className = bs[i].getAttribute('data-emoji') === mineEmoji ? 'on' : '';
     $('actPin').textContent = isPinned(m.id) ? 'Unpin' : 'Pin';
     $('actCopy').classList.toggle('hidden', !m.text);
+    $('actEdit').classList.toggle('hidden', !(m.text && isMe(m.name)));
+    $('actInfo').classList.toggle('hidden', !isMe(m.name));
+    sheetAt = Date.now();
     $('actSticker').classList.toggle('hidden', !m.pic || !!m.stk);
     $('sheet').classList.remove('hidden');
   }
   function closeSheet() { sheetMsg = null; $('sheet').classList.add('hidden'); }
-  $('sheet').addEventListener('click', function (ev) { if (ev.target === $('sheet')) closeSheet(); });
+  $('sheet').addEventListener('click', function (ev) { if (ev.target === $('sheet') && Date.now() - sheetAt > 600) closeSheet(); });
+  $('actEdit').addEventListener('click', function () { var m = sheetMsg; closeSheet(); if (m) setEdit(m); });
   $('actClose').addEventListener('click', closeSheet);
   $('actReply').addEventListener('click', function () {
     var m = sheetMsg; closeSheet();
@@ -1319,8 +1410,8 @@
   $('attach').addEventListener('click', function (ev) { if (ev.target === $('attach')) closeAttach(); });
   $('picBtn').addEventListener('click', closeAttach);
   // The camera button opens the phone's camera straight away; photos from the gallery are under +
-  $('camBtn').addEventListener('click', function () { $('capIn').click(); });
-  $('capBtn').addEventListener('click', function () { closeAttach(); $('capIn').click(); });
+  $('camBtn').addEventListener('click', openCam);
+  $('capBtn').addEventListener('click', function () { closeAttach(); openCam(); });
   $('capIn').addEventListener('change', function () { var f = this.files && this.files[0]; if (f) usePicture(f); });
   $('docBtn').addEventListener('click', closeAttach);
 
@@ -1505,14 +1596,54 @@
       var want = on ? 'Pinned ·' : '';
       if (marks[i].textContent !== want) marks[i].textContent = want;
     }
-    if (!pins.length) { $('pinbar').classList.add('hidden'); return; }
+    // Pinned messages are opened from the pin button; it shows how many there are
+    $('pinBadge').textContent = pins.length;
+    $('pinBadge').classList.toggle('hidden', !pins.length);
+    $('pinbar').classList.add('hidden');
+    if (!pins.length) return;
     var p = pins[pins.length - 1];
     $('pinText').textContent = (isMe(p.name) ? 'You' : p.name) + ': ' + p.text;
     $('pinCount').textContent = pins.length > 1 ? pins.length + ' pinned' : 'Pinned';
-    $('pinbar').classList.remove('hidden');
   }
   $('pinbar').addEventListener('click', showPins);
   $('pinsBtn').addEventListener('click', showPins);
+
+  // ---------- Message info: when it was sent, delivered and seen ----------
+  // The other person's app logs a time each time it receives or shows new messages.
+  // A message was delivered/seen at the first logged time at or after it.
+  function logTime(kind, id) {
+    return fb.ref('log/' + partner() + '/' + kind).orderByKey().startAt(K(id)).limitToFirst(1).once('value').then(function (snap) {
+      var t = 0;
+      snap.forEach(function (c) { t = Number(c.val()) || 0; });
+      return t;
+    });
+  }
+
+  function infoRow(label, text) {
+    var it = document.createElement('div'); it.className = 'item'; it.style.cursor = 'default';
+    var g = document.createElement('div'); g.className = 'grow';
+    var sm = document.createElement('small'); sm.textContent = label;
+    var sp = document.createElement('span'); sp.textContent = text;
+    g.appendChild(sm); g.appendChild(sp); it.appendChild(g);
+    return it;
+  }
+
+  $('actInfo').addEventListener('click', function () {
+    var m = sheetMsg; closeSheet();
+    if (!m) return;
+    openPanel('info', 'Message info');
+    panelNote('Loading…');
+    Promise.all([logTime('d', m.id), logTime('s', m.id)]).then(function (r) {
+      if (panelMode !== 'info') return;
+      var list = $('panelList');
+      while (list.firstChild) list.removeChild(list.firstChild);
+      var delivered = m.id <= otherDelivered, seen = m.id <= otherSeen;
+      list.appendChild(infoRow('Message', snippet(m) || 'Message'));
+      list.appendChild(infoRow('\u2713 Sent', timeLabel(m.t)));
+      list.appendChild(infoRow('\u2713\u2713 Delivered', !delivered ? 'Not yet' : r[0] ? timeLabel(r[0]) : 'Yes (the time was not recorded for older messages)'));
+      list.appendChild(infoRow('\u2713\u2713 Seen by ' + partner(), !seen ? 'Not yet' : r[1] ? timeLabel(r[1]) : 'Yes (the time was not recorded for older messages)'));
+    }).catch(function (err) { panelNote('The times could not be loaded: ' + errText(err)); });
+  });
 
   // ---------- Search and pinned list (shared screen) ----------
   var panelMode = '';
@@ -1697,6 +1828,8 @@
     if (v.file) m.file = v.file;
     if (v.reply) m.reply = v.reply;
     if (v.rx) m.rx = v.rx;
+    if (v.ed) m.ed = v.ed;
+    if (v.loc && typeof v.loc.lat === 'number' && typeof v.loc.lng === 'number') m.loc = v.loc;
     return m;
   }
 
@@ -1712,6 +1845,8 @@
     if (m.file && m.file.id) n.file = { id: m.file.id, name: String(m.file.name || 'document'), size: Number(m.file.size) || 0 };
     if (m.reply && m.reply.id) n.reply = { id: Number(m.reply.id), name: String(m.reply.name || ''), text: String(m.reply.text || '').slice(0, 140) };
     if (m.rx) n.rx = m.rx;
+    if (m.ed) n.ed = m.ed;
+    if (m.loc) n.loc = { lat: Number(m.loc.lat), lng: Number(m.loc.lng), acc: Number(m.loc.acc) || 0 };
     return n;
   }
 
@@ -1787,6 +1922,15 @@
   function syncMsg(old, m) {
     if (m.del) { if (!old.del) { markDeleted(m.id, m.by); saveCacheSoon(); } return; }
     if (old.del) return;
+    if (old.text !== m.text || (old.ed || 0) !== (m.ed || 0)) {
+      // The message was edited: show the new text in place
+      for (var i = 0; i < items.length; i++) { if (items[i].id === m.id) items[i] = m; }
+      var row = rowOf(m.id), wasSel = row && row.classList.contains('sel');
+      if (row) { var nr = buildRow(m); if (wasSel) nr.classList.add('sel'); row.parentNode.replaceChild(nr, row); } else byId[m.id] = m;
+      searchAll = null;
+      paintStatus(); paintPins(); saveCacheSoon();
+      return;
+    }
     old.t = m.t;
     if (JSON.stringify(old.rx || {}) !== JSON.stringify(m.rx || {})) { applyRx(m.id, m.rx || {}); saveCacheSoon(); }
   }
@@ -1795,10 +1939,11 @@
   var myD = 0, myS = 0;
   function updateMyState() {
     if (!fb || !me || !lastRow) return;
-    var u = {};
-    if (lastRow > myD) { u.d = lastRow; myD = lastRow; }
-    if (!document.hidden && lastRow > myS) { u.s = lastRow; myS = lastRow; }
-    if (u.d || u.s) fb.ref('state/' + me).update(u).catch(function () {});
+    // Besides the position, the time is logged, so "Info" can show when a message was delivered and seen
+    var u = {}, any = false;
+    if (lastRow > myD) { u['state/' + me + '/d'] = lastRow; u['log/' + me + '/d/' + K(lastRow)] = TS; myD = lastRow; any = true; }
+    if (!document.hidden && lastRow > myS) { u['state/' + me + '/s'] = lastRow; u['log/' + me + '/s/' + K(lastRow)] = TS; myS = lastRow; any = true; }
+    if (any) fb.ref().update(u).catch(function () {});
   }
 
   function setOnline() {
@@ -1918,13 +2063,34 @@
 
   // ---------- Replying ----------
   function setReply(r) {
+    if (r && editing) setEdit(null);
     replyTo = r;
-    if (!r) { $('replybar').classList.add('hidden'); return; }
+    if (!r) { if (!editing) $('replybar').classList.add('hidden'); return; }
     $('replyName').textContent = 'Replying to ' + (isMe(r.name) ? 'yourself' : r.name);
     $('replyText').textContent = r.text;
     $('replybar').classList.remove('hidden');
   }
-  $('replyCancel').addEventListener('click', function () { setReply(null); });
+
+  // Editing: the message text goes back into the box; sending saves the change
+  function setEdit(m) {
+    if (!m) {
+      if (!editing) return;
+      editing = null;
+      $('replybar').classList.add('hidden');
+      msgIn.value = ''; msgIn.style.height = 'auto'; updateComposer();
+      return;
+    }
+    replyTo = null; clearPic(); clearDoc();
+    editing = { id: m.id, old: m.text };
+    $('replyName').textContent = 'Editing your message';
+    $('replyText').textContent = m.text;
+    $('replybar').classList.remove('hidden');
+    msgIn.value = m.text;
+    msgIn.style.height = 'auto'; msgIn.style.height = Math.min(msgIn.scrollHeight, 120) + 'px';
+    updateComposer();
+    msgIn.focus();
+  }
+  $('replyCancel').addEventListener('click', function () { if (editing) setEdit(null); else setReply(null); });
 
   // Swipe a message to the right to reply to it
   (function () {
@@ -1975,6 +2141,97 @@
     $('micBtn').classList.toggle('hidden', has);
   }
 
+  // Press and hold a message to open its menu (reactions, reply, edit, pin, copy, delete)
+  (function () {
+    var list = $('list'), timer = null, sx = 0, sy = 0;
+    function cancel() { if (timer) { clearTimeout(timer); timer = null; } }
+    list.addEventListener('pointerdown', function (ev) {
+      cancel();
+      if (selecting || (ev.pointerType === 'mouse' && ev.button !== 0)) return;
+      var row = ev.target.closest('.row[data-row]');
+      if (!row || row.classList.contains('gone') || !ev.target.closest('.bubble') || ev.target.closest('audio, .rbtn')) return;
+      var m = byId[Number(row.getAttribute('data-row'))];
+      if (!m) return;
+      sx = ev.clientX; sy = ev.clientY;
+      timer = setTimeout(function () {
+        timer = null;
+        if (selecting || !$('sheet').classList.contains('hidden')) return;
+        heldAt = Date.now();
+        if (navigator.vibrate) { try { navigator.vibrate(12); } catch (e) {} }
+        openSheet(m);
+      }, 480);
+    });
+    list.addEventListener('pointermove', function (ev) { if (timer && (Math.abs(ev.clientX - sx) > 10 || Math.abs(ev.clientY - sy) > 10)) cancel(); });
+    ['pointerup', 'pointercancel', 'pointerleave', 'scroll'].forEach(function (n) { list.addEventListener(n, cancel); });
+    // Letting go after a hold must not also count as a tap on the picture, link or file underneath
+    list.addEventListener('click', function (ev) {
+      if (Date.now() - heldAt < 700) { ev.stopPropagation(); ev.preventDefault(); }
+    }, true);
+  })();
+
+  // ---------- In-app camera ----------
+  function stopCam() {
+    if (camStream) { camStream.getTracks().forEach(function (t) { t.stop(); }); camStream = null; }
+    $('camVideo').srcObject = null;
+  }
+  function closeCam() { stopCam(); $('cam').classList.add('hidden'); }
+
+  function startCam() {
+    stopCam();
+    return navigator.mediaDevices.getUserMedia({ video: { facingMode: camFacing, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false }).then(function (stream) {
+      camStream = stream;
+      var v = $('camVideo');
+      v.srcObject = stream;
+      v.className = camFacing === 'user' ? 'front' : '';
+      return v.play().catch(function () {});
+    });
+  }
+
+  function openCam() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { $('capIn').click(); return; }
+    $('cam').classList.remove('hidden');
+    startCam().catch(function () {
+      closeCam();
+      setStatus('The camera could not be opened. Allow the camera for this app, or choose a photo with +.');
+    });
+  }
+
+  $('camClose').addEventListener('click', closeCam);
+  $('camGallery').addEventListener('click', function () { closeCam(); $('fileIn').click(); });
+  $('camFlip').addEventListener('click', function () {
+    camFacing = camFacing === 'user' ? 'environment' : 'user';
+    startCam().catch(function () { camFacing = camFacing === 'user' ? 'environment' : 'user'; startCam().catch(closeCam); });
+  });
+  $('camShot').addEventListener('click', function () {
+    var v = $('camVideo');
+    if (!v.videoWidth) return;
+    var c = document.createElement('canvas'); c.width = v.videoWidth; c.height = v.videoHeight;
+    c.getContext('2d').drawImage(v, 0, 0);
+    c.toBlob(function (blob) {
+      closeCam();
+      if (blob) usePicture(blob); else setStatus('The photo could not be taken. Please try again.');
+    }, 'image/jpeg', 0.92);
+  });
+  document.addEventListener('visibilitychange', function () { if (document.hidden) closeCam(); });
+
+  // ---------- Sharing my location ----------
+  $('locBtn').addEventListener('click', function () {
+    closeAttach();
+    if (!navigator.geolocation) { setStatus('This phone or browser cannot share a location.'); return; }
+    setStatus('Finding your location…');
+    var reply = replyTo;
+    navigator.geolocation.getCurrentPosition(function (pos) {
+      setStatus('');
+      var c = pos.coords;
+      post({ text: '', reply: reply, loc: { lat: Math.round(c.latitude * 1e6) / 1e6, lng: Math.round(c.longitude * 1e6) / 1e6, acc: Math.round(c.accuracy || 0) } });
+      if (replyTo === reply) setReply(null);
+    }, function (err) {
+      setStatus(err && err.code === 1 ? 'Location is not allowed. Allow location for this app in the phone settings and try again.' :
+        err && err.code === 3 ? 'Finding your location took too long. Please try again, outdoors if possible.' :
+        'Your location could not be found. Check that location is switched on.');
+    }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 30000 });
+  });
+
   // ---------- Sending ----------
   var msgIn = $('msgIn');
   msgIn.addEventListener('input', function () {
@@ -2015,6 +2272,19 @@
   // are first saved to Google Drive (shown as "Sending…"), then the message is written.
   function send() {
     var text = msgIn.value.trim();
+    if (editing) {
+      var ed = editing, cur = byId[ed.id];
+      if (!text) return;
+      editing = null; $('replybar').classList.add('hidden');
+      msgIn.value = ''; msgIn.style.height = 'auto'; updateComposer(); stopTyping();
+      if (!cur || cur.del || text === ed.old) return;
+      var up = {};
+      up['msgs/' + K(ed.id) + '/text'] = text.slice(0, 4000);
+      up['msgs/' + K(ed.id) + '/ed'] = TS;
+      if (isPinned(ed.id)) up['pins/' + K(ed.id) + '/text'] = text.slice(0, 80);
+      fb.ref().update(up).catch(function (err) { setStatus('The change was not saved: ' + errText(err)); });
+      return;
+    }
     if (!text && !pendingPic && !pendingFile) return;
     typedAt = 0;
     post({ text: text, pic: pendingPic, voice: '', reply: replyTo, doc: pendingFile });
@@ -2029,6 +2299,7 @@
     if (!fb || !me) return;
     if (job.voice || job.doc || job.pic) { queueJob(job); return; }
     var m = { text: job.text || '', reply: job.reply || null };
+    if (job.loc) m.loc = job.loc;
     if (job.sticker) { m.pic = job.sticker; m.stk = true; }
     if (job.gif) m.gif = job.gif;
     fbSend(m);
