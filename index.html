@@ -53,7 +53,6 @@
   .hbtn svg { width: 21px; height: 21px; }
   #bellBtn.on svg { stroke: var(--amber); }
   #bellBtn.on #bellSlash { display: none; }
-  #logoutBtn { flex: none; background: transparent; border: 1px solid rgba(255,255,255,.4); color: #fff; border-radius: 8px; padding: 6px 9px; font-size: 13px; cursor: pointer; }
 
   #selbar { background: var(--navy-2); color: #fff; padding: calc(10px + env(safe-area-inset-top)) 12px 10px 16px; display: flex; align-items: center; gap: 8px; border-bottom: 3px solid var(--amber); min-height: 63px; }
   #selbar b { flex: 1; font-size: 16px; }
@@ -138,7 +137,7 @@
   #viewer { position: fixed; inset: 0; background: rgba(0,0,0,.92); display: flex; align-items: center; justify-content: center; z-index: 30; cursor: zoom-out; }
   #viewer img { max-width: 100%; max-height: 100%; }
   .shade { position: fixed; left: 0; right: 0; top: var(--vvt, 0px); height: var(--vvh, 100%); background: rgba(15,23,36,.45); z-index: 20; display: flex; align-items: flex-end; justify-content: center; }
-  #sheet .box, #attach .box, #stk .box { width: 100%; max-width: 760px; background: #fff; border-radius: 18px 18px 0 0; padding: 14px 14px calc(14px + env(safe-area-inset-bottom)); }
+  #sheet .box, #attach .box, #stk .box, #more .box { width: 100%; max-width: 760px; background: #fff; border-radius: 18px 18px 0 0; padding: 14px 14px calc(14px + env(safe-area-inset-bottom)); }
   #emojis { display: flex; justify-content: space-between; margin-bottom: 10px; }
   #emojis button { border: 0; background: #f1f3f6; border-radius: 50%; width: 46px; height: 46px; font-size: 24px; cursor: pointer; }
   #emojis button.on { background: #fdf3df; box-shadow: inset 0 0 0 2px var(--amber); }
@@ -184,6 +183,26 @@
   #camShot { width: 74px; height: 74px; border-radius: 50%; border: 5px solid #fff; background: rgba(255,255,255,.25); cursor: pointer; }
   #camShot:active { background: rgba(255,255,255,.7); }
   #themes button { font-size: 11px; }
+
+  #more .act:first-child { border-top: 0; }
+  .xbox { background: var(--surface); border-radius: 12px; padding: 16px; margin: 6px 0; }
+  .xbox p { margin: 0 0 12px; color: var(--soft-ink); line-height: 1.4; }
+  .act.danger { color: #e8877f; }
+  .act.armed { background: #b9544e; color: #fff; border-radius: 10px; }
+
+  /* Lock screen */
+  #lock { position: fixed; left: 0; right: 0; top: var(--vvt, 0px); height: var(--vvh, 100%); z-index: 60; background: var(--bg); display: flex; align-items: center; justify-content: center; padding: 24px; overflow-y: auto; }
+  #lock .card { text-align: center; }
+  #lock .pav { width: 84px; height: 84px; font-size: 34px; margin-bottom: 12px; }
+  #lock label { text-align: left; }
+  #lockErr { color: #f0a59c; font-size: 14px; min-height: 20px; margin-top: 10px; }
+  .linkbtn { display: block; margin-left: auto; margin-right: auto; }
+  #lockIn.pin { text-align: center; font-size: 26px; letter-spacing: 10px; }
+  .pnote { font-size: 13px; color: var(--muted); margin: 8px 2px 0; text-align: left; }
+  .pmsg { min-height: 18px; margin-top: 8px; font-size: 13px; color: var(--muted); }
+  .pcard > input { margin-top: 2px; }
+  .pid { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .linkbtn { border: 0; background: none; color: var(--muted); font-size: 13px; text-decoration: underline; cursor: pointer; margin-top: 4px; }
 
   /* Profiles */
   .avatar { background-size: cover; background-position: center; cursor: pointer; }
@@ -257,7 +276,7 @@
     --surface: #151d29; --soft: #212c3c; --soft-ink: #c0cbd0;
     --link: #9cc3f5; --seen: #8fb8f0; --chipme: #1f3050; --selbar: #1e3252; --selrow: rgba(143,176,224,.24); --onaccent: #0e1a1d;
   }
-  .card, #pinbar, #replybar, #sheet .box, #attach .box, #stk .box, .item, .chip, #who2 button, #micBtn, #stkBtn, #attBtn, #camBtn, #docbar,
+  .card, #pinbar, #replybar, #sheet .box, #attach .box, #stk .box, #more .box, .item, .chip, #who2 button, #micBtn, #stkBtn, #attBtn, #camBtn, #docbar,
   #composer textarea, .card input, #searchForm input, #gifForm input { background: var(--surface); color: var(--ink); }
   .card { box-shadow: 0 6px 24px rgba(0,0,0,.45); }
   .card h1 { color: var(--ink); }
@@ -284,7 +303,7 @@
 
 <div id="login" class="hidden">
   <form class="card" id="loginForm">
-    <h1>Sukoon</h1>
+    <h1 class="appname">Sukoon</h1>
     <p>Choose who you are and enter the passcode.</p>
     <label>Who are you?</label>
     <div id="who2"></div>
@@ -293,6 +312,20 @@
     <button class="primary" id="loginBtn" type="submit">Enter chat</button>
     <div id="loginErr"></div>
     <div class="ver"></div>
+  </form>
+</div>
+
+<div id="lock" class="hidden">
+  <form class="card" id="lockForm">
+    <div class="pav" id="lockAv"></div>
+    <h1 id="lockName">Sukoon</h1>
+    <p id="lockHint">Locked. Enter the passcode to open the chat.</p>
+    <label for="lockIn" id="lockLabel">Passcode</label>
+    <input id="lockIn" type="password" autocomplete="current-password" required>
+    <button class="primary" type="submit">Unlock</button>
+    <div id="lockErr"></div>
+    <button id="lockMode" class="linkbtn hidden" type="button">Use the passcode instead</button>
+    <button id="lockOut" class="linkbtn" type="button">Sign out instead</button>
   </form>
 </div>
 
@@ -314,7 +347,9 @@
     <button class="hbtn" id="pinsBtn" type="button" aria-label="Pinned messages"><span id="pinBadge" class="hidden"></span>
       <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6l-1 6 3 3H7l3-3z"/><path d="M12 13v7"/></svg>
     </button>
-    <button id="logoutBtn" type="button">Sign out</button>
+    <button class="hbtn" id="moreBtn" type="button" aria-label="Menu">
+      <svg viewBox="0 0 24 24" fill="#fff"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+    </button>
   </header>
   <button id="pinbar" class="hidden" type="button">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6l-1 6 3 3H7l3-3z"/><path d="M12 13v7"/></svg>
@@ -378,11 +413,23 @@
   </div>
 </div>
 
+<!-- Main menu (the three dots at the top) -->
+<div id="more" class="shade hidden">
+  <div class="box">
+    <button class="act" id="mProf" type="button">Profiles and settings</button>
+    <button class="act" id="mPins" type="button">Pinned messages</button>
+    <button class="act" id="mExport" type="button">Export chat</button>
+    <button class="act danger" id="mErase" type="button">Erase chat</button>
+    <button class="act" id="logoutBtn" type="button">Sign out</button>
+    <button class="act" id="mClose" type="button">Cancel</button>
+  </div>
+</div>
+
 <!-- Attach: picture or document -->
 <div id="attach" class="shade hidden">
   <div class="box">
-    <button class="act" id="picBtn" type="button">Photo or GIF from the phone</button>
-    <button class="act" id="capBtn" type="button">Open the camera</button>
+    <button class="act" id="picBtn" type="button">Photos from the gallery</button>
+    <button class="act" id="capBtn" type="button">Take a photo with the camera</button>
     <button class="act" id="docBtn" type="button">Document</button>
     <button class="act" id="locBtn" type="button">Share my location</button>
     <button class="act" id="attClose" type="button">Cancel</button>
@@ -444,11 +491,12 @@
 <!-- Profiles: pictures and status lines -->
 <div id="prof" class="shade hidden">
   <div class="box">
-    <div class="top"><b>Profiles</b><button id="profClose" type="button">Close</button></div>
+    <div class="top"><b>Profiles and settings</b><button id="profClose" type="button">Close</button></div>
     <div id="profBody">
       <div class="pcard">
         <div class="pav" id="pavOther"></div>
         <div class="pname" id="pnameOther"></div>
+        <div class="pid" id="pidOther"></div>
         <div class="pabout" id="paboutOther"></div>
         <div class="pseen" id="pseenOther"></div>
       </div>
@@ -456,16 +504,35 @@
         <div class="plabel">Your profile</div>
         <div class="pav" id="pavMe"></div>
         <div class="pname" id="pnameMe"></div>
+        <div class="pid" id="pidMe"></div>
         <div class="prow">
           <button id="profPhoto" type="button">Change photo</button>
           <button id="profNoPhoto" type="button">Remove photo</button>
         </div>
+        <label for="dispIn">Your name</label>
+        <input id="dispIn" maxlength="24" autocomplete="off">
+        <button class="primary" id="dispSave" type="button">Save name</button>
         <label for="aboutIn">Status line</label>
         <input id="aboutIn" maxlength="80" autocomplete="off" placeholder="A short line about you">
         <button class="primary" id="aboutSave" type="button">Save status</button>
         <div id="profMsg"></div>
         <label>Colour theme (only on this phone)</label>
         <div id="themes"></div>
+      </div>
+      <div class="pcard">
+        <div class="plabel">Chat name</div>
+        <input id="nameIn" maxlength="30" autocomplete="off" placeholder="Sukoon">
+        <button class="primary" id="nameSave" type="button">Save chat name</button>
+        <div class="pnote">Both of you see this name. It shows on the sign-in and lock screens and in the browser tab.</div>
+        <div id="nameMsg" class="pmsg"></div>
+      </div>
+      <div class="pcard">
+        <div class="plabel">Lock PIN (only on this phone)</div>
+        <div class="pnote" id="pinState"></div>
+        <input id="pinIn" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="off" placeholder="4 to 8 digits">
+        <button class="primary" id="pinSave" type="button">Set PIN</button>
+        <div class="prow"><button id="pinRemove" type="button">Remove PIN</button></div>
+        <div id="pinMsg" class="pmsg"></div>
         <div class="ver"></div>
       </div>
     </div>
@@ -493,11 +560,15 @@
   var GIPHY_KEY = window.GIPHY_KEY || 'o9sMkdws363zYPGxDocg7RB3TNJJbMff', gifSeq = 0, gifLoaded = false;
   var BIG_EMOJI = ['\uD83D\uDE00','\uD83D\uDE02','\uD83E\uDD23','\uD83D\uDE0A','\uD83D\uDE0D','\uD83E\uDD70','\uD83D\uDE18','\uD83D\uDE0E','\uD83E\uDD14','\uD83D\uDE34','\uD83D\uDE2D','\uD83D\uDE21','\uD83D\uDE31','\uD83E\uDD73','\uD83D\uDE07','\uD83D\uDE48','\uD83D\uDC4D','\uD83D\uDC4E','\uD83D\uDC4F','\uD83D\uDE4F','\uD83D\uDCAA','\uD83E\uDD1D','\uD83D\uDC4B','\uD83E\uDD32','\u2764\uFE0F','\uD83D\uDC94','\uD83D\uDD25','\u2B50','\uD83C\uDF89','\uD83C\uDF39','\u2615','\uD83C\uDF19','\u2705','\u274C','\uD83D\uDCAF','\uD83C\uDF81'];
   var pendingFile = null, MAX_FILE_MB = 25, MAX_FILE = MAX_FILE_MB * 1024 * 1024;
-  var APP_VERSION = '17 Nov, version 12'; // shown on the sign-in and Profiles screens, to check both phones match
+  var APP_VERSION = '17 Nov, version 18'; // shown on the sign-in and Profiles screens, to check both phones match
   var notifyOn = false, unread = 0, audioCtx = null;
   var typedAt = 0, typingSent = false, otherTyping = false;
   var swipe = null, swipedAt = 0;
   var selecting = false, selected = {}, delArmed = 0;
+  var lockByPin = false, pinTries = 0;
+  var lastNames = '';
+  var locked = false, hiddenAt = 0, authUser = null, LOCK_AFTER = 60000, lockTries = 0;
+  var shownFromCache = false, erasedSeen = false, bootLoaded = false, eraseArmed = 0;
   var heldAt = 0, sheetAt = 0, editing = null, camStream = null, camFacing = 'environment';
   var profiles = {};
   // Colour themes: [accent, my bubble, background, header, their bubble, surface, soft, line, name colour, link, seen, my-reaction, select bar]
@@ -604,10 +675,10 @@
   function setPick(name) {
     pick = known(name);
     var bs = $('who2').children;
-    for (var i = 0; i < bs.length; i++) bs[i].className = bs[i].textContent === pick ? 'on' : '';
+    for (var i = 0; i < bs.length; i++) bs[i].className = bs[i].getAttribute('data-id') === pick ? 'on' : '';
   }
   USERS.forEach(function (u) {
-    var b = document.createElement('button'); b.type = 'button'; b.textContent = u;
+    var b = document.createElement('button'); b.type = 'button'; b.textContent = dn(u); b.setAttribute('data-id', u);
     b.addEventListener('click', function () { setPick(u); $('loginErr').textContent = ''; });
     $('who2').appendChild(b);
   });
@@ -623,13 +694,17 @@
     if (!auth) { $('loginErr').textContent = 'The app could not start. Check your internet and reopen it.'; return; }
     $('loginBtn').disabled = true;
     $('loginErr').textContent = '';
-    // The passcode is also needed for pictures and files, so it is kept on this phone
-    store('chatName', n); store('chatPass', p);
-    auth.signInWithEmailAndPassword(emailOf(n), p).then(function () {
+    // Only a fingerprint (hash) of the passcode is kept on this phone, to check it at the lock screen.
+    // The passcode itself stays in memory while the app is open (it is needed for pictures and files).
+    hashPass(p).then(function (h) {
+      store('chatName', n); store('chatPassHash', h); store('chatPass', null);
+      pass = p; locked = false;
+      return auth.signInWithEmailAndPassword(emailOf(n), p);
+    }).then(function () {
       $('loginBtn').disabled = false; // the chat opens from onAuth below
     }).catch(function (err) {
       $('loginBtn').disabled = false;
-      store('chatPass', null);
+      store('chatPassHash', null); pass = '';
       var c = String(err && err.code || '');
       $('loginErr').textContent =
         /wrong-password|invalid-credential|invalid-login|user-not-found/.test(c) ? 'Wrong passcode. Please try again.' :
@@ -642,14 +717,16 @@
   // Shows the chat for this person, starting from the copy saved on this phone
   function enter(n) {
     if (entered && me === n) return;
-    me = n; pass = load('chatPass'); entered = true;
+    me = n; entered = true;
     try { profiles = JSON.parse(load('chatProfiles') || '{}') || {}; } catch (e) { profiles = {}; }
     openChat();
     resetList();
     var saved = null;
     try { saved = JSON.parse(load('chatCache') || 'null'); } catch (e) {}
+    shownFromCache = false;
     if (saved && saved.items && saved.items.length) {
       addMessages({ items: saved.items, status: { delivered: saved.d, seen: saved.s } }, true);
+      shownFromCache = true;
     }
   }
 
@@ -657,10 +734,13 @@
   function onAuth(user) {
     if (user) {
       var n = nameOfEmail(user.email);
-      if (!n || !load('chatPass')) { signOut('Please sign in again.'); return; }
+      if (!n || !load('chatPassHash')) { signOut('Please sign in again.'); return; }
+      authUser = user;
+      if (locked) { showLock(); return; } // opens after the passcode is entered
       enter(n);
       if (!booted) { booted = true; boot(); }
     } else {
+      authUser = null; locked = false; $('lock').classList.add('hidden');
       unboot();
       entered = false; booted = false; me = '';
       var msg = loginMsg; loginMsg = '';
@@ -675,7 +755,7 @@
   }
 
   function showLogin(msg) {
-    closeSheet(); closePanel(); endSelect(); closeStk(); closeAttach(); closeProf(); closeCam();
+    closeSheet(); closePanel(); endSelect(); closeStk(); closeAttach(); closeProf(); closeCam(); closeMore();
     $('chat').classList.add('hidden');
     $('login').classList.remove('hidden');
     setPick(load('chatName'));
@@ -685,7 +765,8 @@
 
   function signOut(msg) {
     loginMsg = msg || '';
-    store('chatPass', null); store('chatCache', null); store('chatProfiles', null);
+    store('chatPass', null); store('chatPassHash', null); store('chatPin', null); store('chatCache', null); store('chatProfiles', null);
+    locked = false; $('lock').classList.add('hidden');
     picWipe(); picCache = {};
     pass = '';
     var done = function () {
@@ -700,7 +781,7 @@
       });
     } else done();
   }
-  $('logoutBtn').addEventListener('click', function () { signOut(''); });
+  $('logoutBtn').addEventListener('click', function () { closeMore(); signOut(''); });
 
   // ---------- Messages ----------
   function resetList() {
@@ -718,17 +799,25 @@
   }
 
   function setTitle() {
-    var nm = otherName || partner() || 'Sukoon';
+    var nm = dn(otherName || partner()) || appName();
     $('title').textContent = nm;
     paintAvatar($('avatar'), partner() || nm);
   }
 
   // Shows a person's profile picture in a round frame, or their initial when they have none
+  // A person's chosen name (their sign-in label, MH or JH, when they have not chosen one)
+  function dn(id) {
+    var p = profiles[id];
+    if (p && typeof p.display === 'string' && p.display.trim()) return p.display.trim();
+    try { var c = JSON.parse(load('chatNames') || '{}'); if (c[id]) return c[id]; } catch (e) {}
+    return id || '';
+  }
+
   function paintAvatar(el, name) {
     var p = profiles[name] || {};
     var ok = typeof p.img === 'string' && p.img.indexOf('data:image/') === 0;
     el.style.backgroundImage = ok ? 'url("' + p.img + '")' : '';
-    el.textContent = ok ? '' : String(name || 'S').charAt(0).toUpperCase();
+    el.textContent = ok ? '' : String(dn(name) || 'S').charAt(0).toUpperCase();
     el.classList.toggle('has', ok);
   }
 
@@ -776,7 +865,7 @@
 
   function makeQuote(r) {
     var q = document.createElement('div'); q.className = 'quote';
-    var nm = document.createElement('b'); nm.textContent = isMe(r.name) ? 'You' : r.name;
+    var nm = document.createElement('b'); nm.textContent = isMe(r.name) ? 'You' : dn(r.name);
     var tx = document.createElement('span'); tx.textContent = r.text;
     q.appendChild(nm); q.appendChild(tx);
     q.addEventListener('click', function () { jumpTo(r.id); });
@@ -801,7 +890,7 @@
       // A deleted message keeps its place and time, with a short note instead of the content
       row.className += ' gone';
       var gx = document.createElement('div'); gx.className = 'text';
-      gx.textContent = !m.by ? 'This message was deleted' : (isMe(m.by) ? 'You' : m.by) + ' deleted this message';
+      gx.textContent = !m.by ? 'This message was deleted' : (isMe(m.by) ? 'You' : dn(m.by)) + ' deleted this message';
       var gt = document.createElement('div'); gt.className = 'time';
       gt.textContent = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
       b.appendChild(gx); b.appendChild(gt); row.appendChild(b);
@@ -1410,8 +1499,9 @@
   $('attach').addEventListener('click', function (ev) { if (ev.target === $('attach')) closeAttach(); });
   $('picBtn').addEventListener('click', closeAttach);
   // The camera button opens the in-app camera; photos from the gallery are under + and beside the shutter
-  $('camBtn').addEventListener('click', openCam);
-  $('capBtn').addEventListener('click', function () { closeAttach(); openCam(); });
+  // The camera button hands over to the phone's own camera app, which needs no permission prompt from the app
+  $('camBtn').addEventListener('click', function () { $('capIn').click(); });
+  $('capBtn').addEventListener('click', function () { closeAttach(); $('capIn').click(); });
   $('capIn').addEventListener('change', function () { var f = this.files && this.files[0]; if (f) usePicture(f); });
   $('docBtn').addEventListener('click', closeAttach);
 
@@ -1509,22 +1599,29 @@
   function onProfiles(snap) {
     profiles = snap.val() || {};
     store('chatProfiles', JSON.stringify(profiles));
-    setTitle();
+    var names = {};
+    USERS.forEach(function (u) { var p = profiles[u]; if (p && p.display) names[u] = String(p.display); });
+    var nj = JSON.stringify(names), changed = nj !== lastNames;
+    lastNames = nj;
+    store('chatNames', nj);
+    if (changed) paintNames(); else { setTitle(); }
     if (!$('prof').classList.contains('hidden')) paintProf(false);
   }
 
   function paintProf(fillInput) {
     var other = partner(), po = profiles[other] || {}, pm = profiles[me] || {};
     paintAvatar($('pavOther'), other); paintAvatar($('pavMe'), me);
-    $('pnameOther').textContent = other; $('pnameMe').textContent = me;
+    $('pnameOther').textContent = dn(other); $('pnameMe').textContent = dn(me);
+    $('pidOther').textContent = dn(other) !== other ? 'signs in as ' + other : '';
+    $('pidMe').textContent = dn(me) !== me ? 'you sign in as ' + me : '';
     $('paboutOther').textContent = po.about || 'No status line yet';
     $('paboutOther').className = 'pabout' + (po.about ? '' : ' none');
     $('pseenOther').textContent = presence && presence.online ? 'online' : presence && presence.seen ? seenLabel(presence.seen) : '';
     $('profNoPhoto').classList.toggle('hidden', !pm.img);
-    if (fillInput) { $('aboutIn').value = pm.about || ''; $('profMsg').textContent = ''; }
+    if (fillInput) { $('aboutIn').value = pm.about || ''; $('dispIn').value = dn(me); $('profMsg').textContent = ''; }
   }
 
-  function openProf() { if (!me) return; paintProf(true); $('prof').classList.remove('hidden'); }
+  function openProf() { if (!me) return; paintProf(true); $('nameIn').value = appName(); $('nameMsg').textContent = ''; $('pinMsg').textContent = ''; paintPin(); $('prof').classList.remove('hidden'); }
   function closeProf() { $('prof').classList.add('hidden'); }
   $('avatar').addEventListener('click', openProf);
   document.querySelector('header .grow').addEventListener('click', openProf);
@@ -1538,6 +1635,37 @@
   });
 
   function profNote(msg) { $('profMsg').textContent = msg; }
+
+  // Everything that shows a person's name is repainted when a name changes
+  function paintNames() {
+    setTitle();
+    paintPins();
+    var bs = $('who2').children;
+    for (var i = 0; i < bs.length; i++) bs[i].textContent = dn(bs[i].getAttribute('data-id'));
+    var k = known(load('chatName'));
+    if (k) { $('lockName').textContent = appName() + ' \u00B7 ' + dn(k); paintAvatar($('lockAv'), k); }
+    if (replyTo) setReply(replyTo);
+    // Quotes and "deleted" notes inside messages
+    var qs = document.querySelectorAll('.row[data-row]');
+    for (var j = 0; j < qs.length; j++) {
+      var m = byId[Number(qs[j].getAttribute('data-row'))];
+      if (m && ((m.reply && m.reply.id) || m.del)) {
+        var nr = buildRow(m);
+        if (qs[j].classList.contains('sel')) nr.classList.add('sel');
+        qs[j].parentNode.replaceChild(nr, qs[j]);
+      }
+    }
+    paintStatus();
+    if (!$('prof').classList.contains('hidden')) paintProf(false);
+  }
+
+  $('dispSave').addEventListener('click', function () {
+    var v = $('dispIn').value.replace(/\s+/g, ' ').trim().slice(0, 24);
+    profNote('Saving…');
+    fb.ref('profile/' + me + '/display').set(v && v !== me ? v : null)
+      .then(function () { profNote('Name saved.'); })
+      .catch(function (err) { profNote('Could not save: ' + errText(err)); });
+  });
 
   $('aboutSave').addEventListener('click', function () {
     var text = $('aboutIn').value.trim().slice(0, 80);
@@ -1602,7 +1730,7 @@
     $('pinbar').classList.add('hidden');
     if (!pins.length) return;
     var p = pins[pins.length - 1];
-    $('pinText').textContent = (isMe(p.name) ? 'You' : p.name) + ': ' + p.text;
+    $('pinText').textContent = (isMe(p.name) ? 'You' : dn(p.name)) + ': ' + p.text;
     $('pinCount').textContent = pins.length > 1 ? pins.length + ' pinned' : 'Pinned';
   }
   $('pinbar').addEventListener('click', showPins);
@@ -1641,7 +1769,7 @@
       list.appendChild(infoRow('Message', snippet(m) || 'Message'));
       list.appendChild(infoRow('\u2713 Sent', timeLabel(m.t)));
       list.appendChild(infoRow('\u2713\u2713 Delivered', !delivered ? 'Not yet' : r[0] ? timeLabel(r[0]) : 'Yes (the time was not recorded for older messages)'));
-      list.appendChild(infoRow('\u2713\u2713 Seen by ' + partner(), !seen ? 'Not yet' : r[1] ? timeLabel(r[1]) : 'Yes (the time was not recorded for older messages)'));
+      list.appendChild(infoRow('\u2713\u2713 Seen by ' + dn(partner()), !seen ? 'Not yet' : r[1] ? timeLabel(r[1]) : 'Yes (the time was not recorded for older messages)'));
     }).catch(function (err) { panelNote('The times could not be loaded: ' + errText(err)); });
   });
 
@@ -1669,7 +1797,7 @@
     arr.forEach(function (p) {
       var it = document.createElement('div'); it.className = 'item';
       var g = document.createElement('div'); g.className = 'grow';
-      var sm = document.createElement('small'); sm.textContent = (isMe(p.name) ? 'You' : p.name) + ' · ' + timeLabel(p.t);
+      var sm = document.createElement('small'); sm.textContent = (isMe(p.name) ? 'You' : dn(p.name)) + ' · ' + timeLabel(p.t);
       var sp = document.createElement('span'); sp.textContent = p.text;
       g.appendChild(sm); g.appendChild(sp); it.appendChild(g);
       it.addEventListener('click', function () { closePanel(); jumpTo(p.id); });
@@ -1754,7 +1882,7 @@
   }
 
   function paintUnread() {
-    document.title = unread ? '(' + unread + ') Sukoon' : 'Sukoon';
+    document.title = unread ? '(' + unread + ') ' + appName() : appName();
     try {
       if (unread && navigator.setAppBadge) navigator.setAppBadge(unread);
       else if (!unread && navigator.clearAppBadge) navigator.clearAppBadge();
@@ -1942,13 +2070,13 @@
     // Besides the position, the time is logged, so "Info" can show when a message was delivered and seen
     var u = {}, any = false;
     if (lastRow > myD) { u['state/' + me + '/d'] = lastRow; u['log/' + me + '/d/' + K(lastRow)] = TS; myD = lastRow; any = true; }
-    if (!document.hidden && lastRow > myS) { u['state/' + me + '/s'] = lastRow; u['log/' + me + '/s/' + K(lastRow)] = TS; myS = lastRow; any = true; }
+    if (!document.hidden && !locked && lastRow > myS) { u['state/' + me + '/s'] = lastRow; u['log/' + me + '/s/' + K(lastRow)] = TS; myS = lastRow; any = true; }
     if (any) fb.ref().update(u).catch(function () {});
   }
 
   function setOnline() {
     if (!fb || !me) return;
-    fb.ref('state/' + me).update(document.hidden ? { on: false, ls: TS } : { on: true, ls: TS }).catch(function () {});
+    fb.ref('state/' + me).update(document.hidden || locked ? { on: false, ls: TS } : { on: true, ls: TS }).catch(function () {});
   }
 
   // Typing: a time stamp that is renewed while I type and removed when I stop
@@ -1997,6 +2125,8 @@
     fb.ref('state/' + partner()).on('value', onOtherState);
     fb.ref('pins').on('value', onPins);
     fb.ref('profile').on('value', onProfiles);
+    fb.ref('meta/erased').on('value', onErased);
+    fb.ref('meta/name').on('value', onName);
     fb.ref('meta/migrated').once('value').then(function (s) {
       if (s.val() !== true) return migrate();
     }).catch(function () {}).then(loadInitial);
@@ -2004,6 +2134,7 @@
 
   function loadInitial() {
     if (!me) return;
+    bootLoaded = true;
     firstFlush = true;
     if (lastRow) { attachLive(); return; } // the saved copy is on screen; the listener brings it up to date
     fb.ref('msgs').orderByKey().limitToLast(PAGE).once('value').then(function (snap) {
@@ -2011,6 +2142,7 @@
       snap.forEach(function (c) { arr.push(toMsg(c.key, c.val())); });
       if (arr.length < PAGE) noOlder = true;
       addMessages({ items: arr }, true);
+      shownFromCache = false;
       updateMyState();
       attachLive();
     }).catch(function (err) { setStatus('Could not load messages: ' + errText(err)); });
@@ -2022,12 +2154,315 @@
     if (liveRef) { liveRef.off(); liveRef = null; }
     try {
       fb.ref('.info/serverTimeOffset').off(); fb.ref('.info/connected').off();
-      fb.ref('pins').off(); fb.ref('profile').off(); USERS.forEach(function (u) { fb.ref('state/' + u).off(); });
+      fb.ref('pins').off(); fb.ref('profile').off(); fb.ref('meta/erased').off(); fb.ref('meta/name').off(); USERS.forEach(function (u) { fb.ref('state/' + u).off(); });
     } catch (e) {}
     clearTimeout(addTimer); addTimer = null; addBuf = [];
     clearTimeout(cacheTimer); clearTimeout(tyTimer); clearTimeout(otTimer);
-    typingAt = 0; myD = 0; myS = 0;
+    typingAt = 0; myD = 0; myS = 0; erasedSeen = false; bootLoaded = false;
   }
+
+  // ---------- Lock screen ----------
+  function hashPass(p) {
+    var data = new TextEncoder().encode('sukoon-lock:' + p);
+    return crypto.subtle.digest('SHA-256', data).then(function (buf) {
+      return Array.prototype.map.call(new Uint8Array(buf), function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+    });
+  }
+
+  function showLock() {
+    var n = known(load('chatName')) || '';
+    paintAvatar($('lockAv'), n);
+    $('lockName').textContent = n ? appName() + ' \u00B7 ' + dn(n) : appName();
+    $('lockIn').value = ''; $('lockErr').textContent = '';
+    setLockMode(!!load('chatPin'));
+    $('lock').classList.remove('hidden');
+    setTimeout(function () { try { $('lockIn').focus(); } catch (e) {} }, 100);
+  }
+
+  function lockNow() {
+    locked = true;
+    closeSheet(); closePanel(); closeStk(); closeAttach(); closeProf(); closeMore(); closeCam();
+    stopTyping();
+    setOnline();
+    showLock();
+  }
+
+  // The lock screen asks for the PIN when one is set on this phone, otherwise for the passcode
+  function setLockMode(pin) {
+    lockByPin = pin;
+    var inp = $('lockIn');
+    inp.value = '';
+    inp.type = 'password';
+    inp.setAttribute('inputmode', pin ? 'numeric' : 'text');
+    inp.setAttribute('autocomplete', pin ? 'off' : 'current-password');
+    inp.className = pin ? 'pin' : '';
+    if (pin) inp.setAttribute('maxlength', '8'); else inp.removeAttribute('maxlength');
+    $('lockLabel').textContent = pin ? 'PIN' : 'Passcode';
+    $('lockHint').textContent = pin ? 'Locked. Enter your PIN to open the chat.' : 'Locked. Enter the passcode to open the chat.';
+    $('lockMode').textContent = pin ? 'Use the passcode instead' : 'Use my PIN instead';
+    $('lockMode').classList.toggle('hidden', !load('chatPin'));
+  }
+  $('lockMode').addEventListener('click', function () {
+    setLockMode(!lockByPin); $('lockErr').textContent = '';
+    try { $('lockIn').focus(); } catch (e) {}
+  });
+
+  function openUnlocked(p) {
+    lockTries = 0; pinTries = 0; pass = p; locked = false;
+    $('lock').classList.add('hidden');
+    try { $('lockIn').blur(); } catch (e) {}
+    var n = known(load('chatName'));
+    if (authUser && n) {
+      enter(n);
+      if (!booted) { booted = true; boot(); }
+      setOnline(); updateMyState();
+    }
+    // If Firebase has not confirmed the sign-in yet, the chat opens as soon as it does
+  }
+
+  $('lockForm').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var p = $('lockIn').value;
+    if (!p) return;
+    if (lockByPin) {
+      pinOpen(p).then(openUnlocked).catch(function () {
+        pinTries++;
+        $('lockIn').value = '';
+        if (pinTries >= 5) {
+          // Too many wrong PINs: the PIN is switched off and the full passcode is needed
+          store('chatPin', null);
+          setLockMode(false);
+          $('lockErr').textContent = 'Too many wrong PINs. Enter the passcode. You can set a new PIN in Profiles and settings.';
+        } else $('lockErr').textContent = 'Wrong PIN. ' + (5 - pinTries) + (5 - pinTries === 1 ? ' try' : ' tries') + ' left before the passcode is needed.';
+      });
+      return;
+    }
+    hashPass(p).then(function (h) {
+      if (h !== load('chatPassHash')) {
+        lockTries++;
+        $('lockIn').value = '';
+        $('lockErr').textContent = lockTries >= 5 ? 'Wrong passcode again. If you have forgotten it, choose "Sign out instead".' : 'Wrong passcode. Please try again.';
+        return;
+      }
+      openUnlocked(p);
+    });
+  });
+  // A PIN unlocks by itself as soon as all its digits are typed
+  $('lockIn').addEventListener('input', function () {
+    var st = null;
+    try { st = JSON.parse(load('chatPin') || 'null'); } catch (e) {}
+    if (lockByPin && st && $('lockIn').value.length === st.n) $('lockForm').requestSubmit ? $('lockForm').requestSubmit() : $('lockForm').dispatchEvent(new Event('submit', { cancelable: true }));
+  });
+  $('lockOut').addEventListener('click', function () { signOut(''); });
+
+  // ---------- PIN ----------
+  // The PIN locks away a copy of the passcode on this phone (AES encryption with a key made from the PIN).
+  // Unlocking with the PIN unlocks that copy, so pictures and files keep working.
+  function b64(buf) { return btoa(String.fromCharCode.apply(null, new Uint8Array(buf))); }
+  function unb64(s) { return Uint8Array.from(atob(s), function (c) { return c.charCodeAt(0); }); }
+  function pinKey(pin, salt) {
+    return crypto.subtle.importKey('raw', new TextEncoder().encode(pin), 'PBKDF2', false, ['deriveKey']).then(function (base) {
+      return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: salt, iterations: 200000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+    });
+  }
+  function pinStore(pin, secret) {
+    var salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+    return pinKey(pin, salt).then(function (key) {
+      return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, new TextEncoder().encode(secret));
+    }).then(function (enc) {
+      store('chatPin', JSON.stringify({ s: b64(salt), i: b64(iv), c: b64(enc), n: pin.length }));
+    });
+  }
+  function pinOpen(pin) {
+    var st = JSON.parse(load('chatPin') || 'null');
+    if (!st) return Promise.reject(new Error('No PIN'));
+    return pinKey(pin, unb64(st.s)).then(function (key) {
+      return crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(st.i) }, key, unb64(st.c));
+    }).then(function (plain) {
+      var p = new TextDecoder().decode(plain);
+      return hashPass(p).then(function (h) { if (h !== load('chatPassHash')) throw new Error('Stale PIN'); return p; });
+    });
+  }
+
+  function paintPin() {
+    var on = !!load('chatPin');
+    $('pinState').textContent = on ? 'A PIN is set. The lock screen asks for it instead of the passcode.' : 'No PIN yet. Set one to unlock with a few digits instead of the full passcode.';
+    $('pinSave').textContent = on ? 'Change PIN' : 'Set PIN';
+    $('pinRemove').parentNode.classList.toggle('hidden', !on);
+    $('pinIn').value = '';
+  }
+  $('pinSave').addEventListener('click', function () {
+    var pin = $('pinIn').value.trim();
+    if (!/^[0-9]{4,8}$/.test(pin)) { $('pinMsg').textContent = 'The PIN must be 4 to 8 digits.'; return; }
+    if (!pass) { $('pinMsg').textContent = 'Please lock and unlock with the passcode first.'; return; }
+    $('pinMsg').textContent = 'Saving…';
+    pinStore(pin, pass).then(function () { paintPin(); $('pinMsg').textContent = 'PIN saved. Use it next time the app is locked.'; })
+      .catch(function (err) { $('pinMsg').textContent = 'The PIN could not be saved: ' + errText(err); });
+  });
+  $('pinRemove').addEventListener('click', function () {
+    store('chatPin', null); paintPin(); $('pinMsg').textContent = 'PIN removed. The lock screen asks for the passcode again.';
+  });
+
+  // ---------- Chat name (shared by both people) ----------
+  function appName() { return load('chatTitle') || 'Sukoon'; }
+  function paintName() {
+    var n = appName();
+    paintUnread();
+    var hs = document.querySelectorAll('.appname');
+    for (var i = 0; i < hs.length; i++) hs[i].textContent = n;
+    var meta = document.querySelector('meta[name="apple-mobile-web-app-title"]'); if (meta) meta.setAttribute('content', n);
+    var k = known(load('chatName'));
+    $('lockName').textContent = k ? n + ' \u00B7 ' + dn(k) : n;
+    setTitle();
+  }
+  function onName(snap) {
+    var v = String(snap.val() || '').trim().slice(0, 30);
+    store('chatTitle', v || null);
+    paintName();
+    if (!$('prof').classList.contains('hidden') && document.activeElement !== $('nameIn')) $('nameIn').value = appName();
+  }
+  $('nameSave').addEventListener('click', function () {
+    var v = $('nameIn').value.trim().slice(0, 30);
+    $('nameMsg').textContent = 'Saving…';
+    fb.ref('meta/name').set(v || null)
+      .then(function () { $('nameMsg').textContent = 'Chat name saved.'; })
+      .catch(function (err) { $('nameMsg').textContent = 'Could not save: ' + errText(err); });
+  });
+
+  // ---------- Exporting the chat as a text file ----------
+  function two(n) { return ('0' + n).slice(-2); }
+  function stamp(t) {
+    var d = new Date(t), h = d.getHours(), ap = h < 12 ? 'AM' : 'PM';
+    h = h % 12 || 12;
+    return two(d.getDate()) + '/' + two(d.getMonth() + 1) + '/' + d.getFullYear() + ', ' + h + ':' + two(d.getMinutes()) + ' ' + ap;
+  }
+  // One line per message, like a WhatsApp export; pictures and files are named, not included
+  function exportLine(m) {
+    var head = '[' + stamp(m.t) + '] ' + (dn(m.name) || '?') + ': ';
+    if (m.del) return head + '<This message was deleted>';
+    var parts = [];
+    if (m.reply && m.reply.id) parts.push('(reply to ' + dn(m.reply.name) + ': "' + String(m.reply.text || '').replace(/\s+/g, ' ').slice(0, 60) + '")');
+    if (m.stk) parts.push('<Sticker>');
+    else if (m.pic) parts.push('<Picture>');
+    if (m.gif) parts.push('<GIF: ' + m.gif + '>');
+    if (m.voice) parts.push('<Voice message>');
+    if (m.file) parts.push('<Document: ' + m.file.name + '>');
+    if (m.loc) parts.push('<Location: https://www.google.com/maps?q=' + m.loc.lat + ',' + m.loc.lng + '>');
+    if (m.text) parts.push(m.text);
+    var line = head + parts.join(' ');
+    if (m.ed) line += ' <edited>';
+    var rx = m.rx || {}, names = Object.keys(rx);
+    if (names.length) line += '  [' + names.map(function (n) { return dn(n) + ' ' + rx[n]; }).join(', ') + ']';
+    return line;
+  }
+
+  var exportFile = null;
+  $('mExport').addEventListener('click', function () {
+    closeMore();
+    openPanel('export', 'Export chat');
+    panelNote('Collecting every message…');
+    exportFile = null;
+    fb.ref('msgs').once('value').then(function (snap) {
+      var all = [];
+      snap.forEach(function (c) { var m = toMsg(c.key, c.val()); if (m.id > 0) all.push(m); });
+      all.sort(function (a, b) { return a.id - b.id; });
+      var head = [appName() + ' \u2014 chat between ' + USERS.map(dn).join(' and '), 'Exported ' + stamp(Date.now()) + ' \u00B7 ' + all.length + ' messages', ''];
+      var text = '\ufeff' + head.concat(all.map(exportLine)).join('\r\n') + '\r\n';
+      var d = new Date(), name = (appName().replace(/[\\/:*?"<>|]/g, '').trim() || 'Chat') + ' chat ' + d.getFullYear() + '-' + two(d.getMonth() + 1) + '-' + two(d.getDate()) + '.txt';
+      exportFile = new File([text], name, { type: 'text/plain' });
+      if (panelMode !== 'export') return;
+      var list = $('panelList');
+      while (list.firstChild) list.removeChild(list.firstChild);
+      var box = document.createElement('div'); box.className = 'xbox';
+      var p = document.createElement('p');
+      p.textContent = all.length + ' messages are ready, from ' + (all.length ? stamp(all[0].t) : '-') + ' to ' + (all.length ? stamp(all[all.length - 1].t) : '-') +
+        '. Pictures, voice messages and documents are listed by name; the files themselves stay in your Google Drive.';
+      var btn = document.createElement('button'); btn.type = 'button'; btn.className = 'primary'; btn.textContent = 'Save ' + name;
+      btn.addEventListener('click', function () { saveExport(); });
+      box.appendChild(p); box.appendChild(btn); list.appendChild(box);
+    }).catch(function (err) { panelNote('The chat could not be exported: ' + errText(err)); });
+  });
+
+  function saveExport() {
+    if (!exportFile) return;
+    var touch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0, canShare = false;
+    try { canShare = touch && navigator.canShare && navigator.canShare({ files: [exportFile] }); } catch (e) {}
+    function byLink() {
+      var url = URL.createObjectURL(exportFile);
+      var a = document.createElement('a'); a.href = url; a.download = exportFile.name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+    }
+    // On a phone this opens the share sheet (save to Files, Drive, email, WhatsApp…)
+    if (canShare) navigator.share({ files: [exportFile], title: exportFile.name }).catch(function (err) { if (!err || err.name !== 'AbortError') byLink(); });
+    else byLink();
+  }
+
+  // ---------- Erasing the whole chat ----------
+  // Firebase keeps the time of the last erase. When it changes, every phone clears its screen
+  // and its saved copy, then loads the (now empty) chat afresh.
+  function onErased(snap) {
+    var v = Number(snap.val()) || 0, mine = Number(load('chatErased')) || 0;
+    var first = !erasedSeen; erasedSeen = true;
+    if (v <= mine) return;
+    store('chatErased', String(v));
+    // On opening, a fresh download is already up to date; only a saved copy from before the erase is stale
+    if (first && !shownFromCache) return;
+    store('chatCache', null);
+    picWipe(); picCache = {};
+    if (liveRef) { liveRef.off(); liveRef = null; }
+    resetList();
+    shownFromCache = false;
+    if (bootLoaded) loadInitial();
+    if (!first) setInfo('The chat was erased.');
+  }
+
+  function eraseChat() {
+    setStatus('Erasing the chat…');
+    fb.ref('msgs').once('value').then(function (snap) {
+      // Pictures, voice messages and documents go to the Google Drive bin (stickers are kept)
+      var files = [];
+      snap.forEach(function (c) {
+        var v = c.val() || {};
+        if (v.pic && !v.stk) files.push(v.pic);
+        if (v.voice) files.push(v.voice);
+        if (v.file && v.file.id) files.push(v.file.id);
+      });
+      // meta/migrated stays, so the old Google Sheet messages are never copied back in
+      return fb.ref().update({ msgs: null, pins: null, log: null, 'meta/erased': TS }).then(function () { return files; });
+    }).then(function (files) {
+      setInfo('Chat erased.');
+      for (var i = 0; i < files.length; i += 200) {
+        api('trash', { pass: pass, ids: files.slice(i, i + 200) }).catch(function () {});
+      }
+    }).catch(function (err) { setStatus('The chat could not be erased: ' + errText(err)); });
+  }
+
+  // ---------- Main menu ----------
+  function closeMore() {
+    $('more').classList.add('hidden');
+    eraseArmed = 0;
+    $('mErase').textContent = 'Erase chat'; $('mErase').classList.remove('armed');
+  }
+  $('moreBtn').addEventListener('click', function () { closeMore(); $('more').classList.remove('hidden'); });
+  $('more').addEventListener('click', function (ev) { if (ev.target === $('more')) closeMore(); });
+  $('mClose').addEventListener('click', closeMore);
+  $('mProf').addEventListener('click', function () { closeMore(); openProf(); });
+  $('mPins').addEventListener('click', function () { closeMore(); showPins(); });
+  // First tap asks to confirm, second tap erases everything for both people
+  $('mErase').addEventListener('click', function () {
+    if (Date.now() > eraseArmed) {
+      eraseArmed = Date.now() + 5000;
+      $('mErase').textContent = 'Tap again to erase every message for both of you';
+      $('mErase').classList.add('armed');
+      setTimeout(function () {
+        if (eraseArmed && Date.now() >= eraseArmed) { eraseArmed = 0; $('mErase').textContent = 'Erase chat'; $('mErase').classList.remove('armed'); }
+      }, 5100);
+      return;
+    }
+    closeMore();
+    eraseChat();
+  });
 
   // One time only: copies the messages from the old Google Sheet into Firebase
   function migrate() {
@@ -2057,6 +2492,9 @@
 
   document.addEventListener('visibilitychange', function () {
     if (!me) return;
+    // Coming back after more than a minute away locks the app again
+    if (document.hidden) hiddenAt = Date.now();
+    else if (hiddenAt && Date.now() - hiddenAt > LOCK_AFTER && load('chatPassHash')) { hiddenAt = 0; lockNow(); }
     setOnline();
     if (document.hidden) stopTyping(); else updateMyState();
   });
@@ -2066,7 +2504,7 @@
     if (r && editing) setEdit(null);
     replyTo = r;
     if (!r) { if (!editing) $('replybar').classList.add('hidden'); return; }
-    $('replyName').textContent = 'Replying to ' + (isMe(r.name) ? 'yourself' : r.name);
+    $('replyName').textContent = 'Replying to ' + (isMe(r.name) ? 'yourself' : dn(r.name));
     $('replyText').textContent = r.text;
     $('replybar').classList.remove('hidden');
   }
@@ -2544,7 +2982,8 @@
   // ---------- Start ----------
   (function () {
     var vs = document.querySelectorAll('.ver');
-    for (var vi = 0; vi < vs.length; vi++) vs[vi].textContent = 'Sukoon \u00B7 ' + APP_VERSION;
+    for (var vi = 0; vi < vs.length; vi++) vs[vi].textContent = 'Version: ' + APP_VERSION;
+    paintName();
     notifyOn = false; // notifications are switched off in this version
     // config.js may hold the block exactly as copied from Firebase (const firebaseConfig = {...})
     var cfg = window.FIREBASE_CONFIG || (typeof firebaseConfig !== 'undefined' ? firebaseConfig : null);
@@ -2557,8 +2996,14 @@
     } catch (e) { showLogin('The app could not start: ' + errText(e)); return; }
     // Open straight into the saved chat; Firebase then confirms the sign-in and goes live
     var n = known(load('chatName'));
-    if (n && load('chatPass')) enter(n);
-    auth.onAuthStateChanged(onAuth);
+    // Older versions kept the passcode itself on the phone: replace it with its fingerprint
+    var old = load('chatPass');
+    var ready = old ? hashPass(old).then(function (h) { store('chatPassHash', h); store('chatPass', null); }) : Promise.resolve();
+    ready.catch(function () {}).then(function () {
+      // Every time the app opens, it starts locked
+      if (n && load('chatPassHash')) { locked = true; showLock(); }
+      auth.onAuthStateChanged(onAuth);
+    });
   })();
 
   if ('serviceWorker' in navigator) {
