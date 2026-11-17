@@ -358,7 +358,7 @@
     <button id="recCancel" type="button">Cancel</button>
     <button id="recSend" type="button">Send</button>
   </div>
-  <input id="fileIn" type="file" accept="image/*" class="hidden">
+  <input id="fileIn" type="file" accept="image/*" multiple class="hidden">
   <input id="docIn" type="file" class="hidden">
   <input id="capIn" type="file" accept="image/*" capture="environment" class="hidden">
 </div>
@@ -493,7 +493,7 @@
   var GIPHY_KEY = window.GIPHY_KEY || 'o9sMkdws363zYPGxDocg7RB3TNJJbMff', gifSeq = 0, gifLoaded = false;
   var BIG_EMOJI = ['\uD83D\uDE00','\uD83D\uDE02','\uD83E\uDD23','\uD83D\uDE0A','\uD83D\uDE0D','\uD83E\uDD70','\uD83D\uDE18','\uD83D\uDE0E','\uD83E\uDD14','\uD83D\uDE34','\uD83D\uDE2D','\uD83D\uDE21','\uD83D\uDE31','\uD83E\uDD73','\uD83D\uDE07','\uD83D\uDE48','\uD83D\uDC4D','\uD83D\uDC4E','\uD83D\uDC4F','\uD83D\uDE4F','\uD83D\uDCAA','\uD83E\uDD1D','\uD83D\uDC4B','\uD83E\uDD32','\u2764\uFE0F','\uD83D\uDC94','\uD83D\uDD25','\u2B50','\uD83C\uDF89','\uD83C\uDF39','\u2615','\uD83C\uDF19','\u2705','\u274C','\uD83D\uDCAF','\uD83C\uDF81'];
   var pendingFile = null, MAX_FILE_MB = 25, MAX_FILE = MAX_FILE_MB * 1024 * 1024;
-  var APP_VERSION = '16 Nov, version 11'; // shown on the sign-in and Profiles screens, to check both phones match
+  var APP_VERSION = '17 Nov, version 12'; // shown on the sign-in and Profiles screens, to check both phones match
   var notifyOn = false, unread = 0, audioCtx = null;
   var typedAt = 0, typingSent = false, otherTyping = false;
   var swipe = null, swipedAt = 0;
@@ -1409,7 +1409,7 @@
   $('attClose').addEventListener('click', closeAttach);
   $('attach').addEventListener('click', function (ev) { if (ev.target === $('attach')) closeAttach(); });
   $('picBtn').addEventListener('click', closeAttach);
-  // The camera button opens the phone's camera straight away; photos from the gallery are under +
+  // The camera button opens the in-app camera; photos from the gallery are under + and beside the shutter
   $('camBtn').addEventListener('click', openCam);
   $('capBtn').addEventListener('click', function () { closeAttach(); openCam(); });
   $('capIn').addEventListener('change', function () { var f = this.files && this.files[0]; if (f) usePicture(f); });
@@ -2463,7 +2463,9 @@
   }
 
   $('fileIn').addEventListener('change', function () {
-    var f = this.files && this.files[0];
+    var fs = this.files || [];
+    if (fs.length > 1) { var all = Array.prototype.slice.call(fs); this.value = ''; sendPictures(all); return; }
+    var f = fs[0];
     if (f) usePicture(f);
   });
 
@@ -2481,44 +2483,62 @@
     usePicture(f);
   });
 
-  function usePicture(f) {
-    // An animated GIF is sent as it is, so it keeps moving
-    if (f.type === 'image/gif') {
-      if (f.size > 4 * 1024 * 1024) { setStatus('That GIF is ' + sizeLabel(f.size) + '. The limit is 4 MB.'); return; }
-      var fr = new FileReader();
-      fr.onload = function () {
-        pendingPic = String(fr.result);
-        $('previewImg').src = pendingPic;
-        $('preview').classList.remove('hidden');
-        setStatus('');
-        updateComposer();
+  // Gets a picture ready to send: photos are shrunk, animated GIFs are kept as they are
+  function prepPicture(f) {
+    return new Promise(function (res, rej) {
+      if (f.type === 'image/gif') {
+        if (f.size > 4 * 1024 * 1024) { rej(new Error('That GIF is ' + sizeLabel(f.size) + '. The limit is 4 MB.')); return; }
+        var fr = new FileReader();
+        fr.onload = function () { res(String(fr.result)); };
+        fr.onerror = function () { rej(new Error('That picture could not be opened. Try another one.')); };
+        fr.readAsDataURL(f);
+        return;
+      }
+      var url = URL.createObjectURL(f);
+      var img = new Image();
+      img.onload = function () {
+        var max = 1280, w = img.naturalWidth, h = img.naturalHeight;
+        var scale = Math.min(1, max / Math.max(w, h));
+        var c = document.createElement('canvas');
+        c.width = Math.round(w * scale); c.height = Math.round(h * scale);
+        var ctx = c.getContext('2d');
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        res(c.toDataURL('image/jpeg', 0.8));
       };
-      fr.readAsDataURL(f);
-      return;
-    }
-    var url = URL.createObjectURL(f);
-    var img = new Image();
-    img.onload = function () {
-      // Shrink large photos so they send quickly
-      var max = 1280, w = img.naturalWidth, h = img.naturalHeight;
-      var scale = Math.min(1, max / Math.max(w, h));
-      var c = document.createElement('canvas');
-      c.width = Math.round(w * scale); c.height = Math.round(h * scale);
-      var ctx = c.getContext('2d');
-      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
-      ctx.drawImage(img, 0, 0, c.width, c.height);
-      pendingPic = c.toDataURL('image/jpeg', 0.8);
-      URL.revokeObjectURL(url);
+      img.onerror = function () { URL.revokeObjectURL(url); rej(new Error('That picture could not be opened. Try another one.')); };
+      img.src = url;
+    });
+  }
+
+  // One picture: shown above the message box so a caption can be added before sending
+  function usePicture(f) {
+    prepPicture(f).then(function (data) {
+      pendingPic = data;
       $('previewImg').src = pendingPic;
       $('preview').classList.remove('hidden');
       setStatus('');
       updateComposer();
-    };
-    img.onerror = function () {
-      URL.revokeObjectURL(url);
-      setStatus('That picture could not be opened. Try another one.');
-    };
-    img.src = url;
+    }).catch(function (err) { setStatus(errText(err)); });
+  }
+
+  // Several pictures chosen together are sent straight away, one message each, in the order chosen
+  function sendPictures(files) {
+    var list = Array.prototype.slice.call(files, 0, 20), skipped = files.length - list.length, failed = 0;
+    var reply = replyTo; setReply(null);
+    var chain = Promise.resolve();
+    list.forEach(function (f, i) {
+      chain = chain.then(function () {
+        return prepPicture(f).then(function (data) {
+          post({ text: '', pic: data, voice: '', reply: i === 0 ? reply : null });
+        }).catch(function () { failed++; });
+      });
+    });
+    chain.then(function () {
+      if (failed) setStatus(failed + (failed === 1 ? ' picture' : ' pictures') + ' could not be opened and ' + (failed === 1 ? 'was' : 'were') + ' skipped.');
+      else if (skipped > 0) setStatus('Only the first 20 pictures were sent.');
+    });
   }
 
   // ---------- Start ----------
