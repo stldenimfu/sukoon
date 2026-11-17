@@ -560,14 +560,19 @@
   var GIPHY_KEY = window.GIPHY_KEY || 'o9sMkdws363zYPGxDocg7RB3TNJJbMff', gifSeq = 0, gifLoaded = false;
   var BIG_EMOJI = ['\uD83D\uDE00','\uD83D\uDE02','\uD83E\uDD23','\uD83D\uDE0A','\uD83D\uDE0D','\uD83E\uDD70','\uD83D\uDE18','\uD83D\uDE0E','\uD83E\uDD14','\uD83D\uDE34','\uD83D\uDE2D','\uD83D\uDE21','\uD83D\uDE31','\uD83E\uDD73','\uD83D\uDE07','\uD83D\uDE48','\uD83D\uDC4D','\uD83D\uDC4E','\uD83D\uDC4F','\uD83D\uDE4F','\uD83D\uDCAA','\uD83E\uDD1D','\uD83D\uDC4B','\uD83E\uDD32','\u2764\uFE0F','\uD83D\uDC94','\uD83D\uDD25','\u2B50','\uD83C\uDF89','\uD83C\uDF39','\u2615','\uD83C\uDF19','\u2705','\u274C','\uD83D\uDCAF','\uD83C\uDF81'];
   var pendingFile = null, MAX_FILE_MB = 25, MAX_FILE = MAX_FILE_MB * 1024 * 1024;
-  var APP_VERSION = '17 Nov, version 18'; // shown on the sign-in and Profiles screens, to check both phones match
+  var APP_VERSION = '17 Nov, version 19'; // shown on the sign-in and Profiles screens, to check both phones match
   var notifyOn = false, unread = 0, audioCtx = null;
   var typedAt = 0, typingSent = false, otherTyping = false;
   var swipe = null, swipedAt = 0;
   var selecting = false, selected = {}, delArmed = 0;
   var lockByPin = false, pinTries = 0;
   var lastNames = '';
-  var locked = false, hiddenAt = 0, authUser = null, LOCK_AFTER = 60000, lockTries = 0;
+  var locked = false, hiddenAt = 0, authUser = null, LOCK_AFTER = 5 * 60000, lockTries = 0, pickerUntil = 0;
+  // Called just before the app hands over to the phone's picker, camera or share screen
+  function handingOver() { pickerUntil = Date.now() + 5 * 60000; }
+  document.addEventListener('click', function (ev) {
+    if (ev.target && ev.target.tagName === 'INPUT' && ev.target.type === 'file') handingOver();
+  }, true);
   var shownFromCache = false, erasedSeen = false, bootLoaded = false, eraseArmed = 0;
   var heldAt = 0, sheetAt = 0, editing = null, camStream = null, camFacing = 'environment';
   var profiles = {};
@@ -1203,6 +1208,7 @@
       var canShare = false;
       try { canShare = touch && navigator.canShare && navigator.canShare({ files: [ready] }); } catch (e) {}
       if (!canShare) { saveByLink(); return; }
+      handingOver();
       navigator.share({ files: [ready], title: f.name }).catch(function (err) {
         if (!err || err.name !== 'AbortError') saveByLink();
       });
@@ -2179,6 +2185,10 @@
     setTimeout(function () { try { $('lockIn').focus(); } catch (e) {} }, 100);
   }
 
+  window.addEventListener('pagehide', function () {
+    if (me && !locked && load('chatPassHash') && Date.now() > pickerUntil) lockNow();
+  });
+
   function lockNow() {
     locked = true;
     closeSheet(); closePanel(); closeStk(); closeAttach(); closeProf(); closeMore(); closeCam();
@@ -2394,6 +2404,7 @@
       setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
     }
     // On a phone this opens the share sheet (save to Files, Drive, email, WhatsApp…)
+    if (canShare) handingOver();
     if (canShare) navigator.share({ files: [exportFile], title: exportFile.name }).catch(function (err) { if (!err || err.name !== 'AbortError') byLink(); });
     else byLink();
   }
@@ -2492,9 +2503,16 @@
 
   document.addEventListener('visibilitychange', function () {
     if (!me) return;
-    // Coming back after more than a minute away locks the app again
-    if (document.hidden) hiddenAt = Date.now();
-    else if (hiddenAt && Date.now() - hiddenAt > LOCK_AFTER && load('chatPassHash')) { hiddenAt = 0; lockNow(); }
+    // The app locks as soon as it leaves the screen (phone locked, home button, another app).
+    // Not while the phone's own photo, camera, file or share screen is open for the app,
+    // unless that takes more than 5 minutes.
+    if (document.hidden) {
+      hiddenAt = Date.now();
+      if (!locked && load('chatPassHash') && Date.now() > pickerUntil) lockNow();
+    } else {
+      if (!locked && hiddenAt && Date.now() - hiddenAt > LOCK_AFTER && load('chatPassHash')) lockNow();
+      hiddenAt = 0; pickerUntil = 0;
+    }
     setOnline();
     if (document.hidden) stopTyping(); else updateMyState();
   });
