@@ -185,6 +185,20 @@
   #themes button { font-size: 11px; }
 
   #more .act:first-child { border-top: 0; }
+  #outSheet .box { width: 100%; max-width: 760px; background: var(--surface); color: var(--ink); border-radius: 18px 18px 0 0; padding: 14px 14px calc(14px + env(safe-area-inset-bottom)); }
+  .sheetnote { font-size: 13px; color: var(--muted); padding: 2px 6px 10px; }
+  /* Disappearing messages and sessions */
+  #ttlBtn { width: auto; padding: 0 6px; border-radius: 12px; }
+  #ttlChip { color: #fff; font-size: 12px; font-weight: 600; white-space: nowrap; }
+  #sesbar { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--soft); color: var(--soft-ink); font-size: 13px; border-bottom: 1px dashed var(--amber); }
+  #sesbar span { flex: 1; }
+  #sesbar button { flex: none; border: 0; border-radius: 8px; padding: 6px 12px; background: var(--amber); color: var(--onaccent); font-weight: 600; cursor: pointer; }
+  .row.ses .bubble { outline: 1.5px dashed var(--amber); outline-offset: -1.5px; }
+  .row.ses.stk .bubble { outline: 0; }
+  .sysrow { justify-content: center; margin: 10px 0; }
+  .syspill { max-width: 86%; text-align: center; font-size: 12.5px; line-height: 1.4; color: var(--soft-ink); background: var(--soft); border-radius: 10px; padding: 6px 12px; }
+  .timer { margin-right: 4px; }
+  .opt.on { outline: 2px solid var(--amber); }
   .xbox { background: var(--surface); border-radius: 12px; padding: 16px; margin: 6px 0; }
   .xbox p { margin: 0 0 12px; color: var(--soft-ink); line-height: 1.4; }
   .act.danger { color: #e8877f; }
@@ -341,6 +355,7 @@
       <div class="title" id="title">Sukoon</div>
       <div class="who" id="who"></div>
     </div>
+    <button class="hbtn hidden" id="ttlBtn" type="button" aria-label="Disappearing messages are on"><span id="ttlChip"></span></button>
     <button class="hbtn" id="searchBtn" type="button" aria-label="Search messages">
       <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
     </button>
@@ -351,6 +366,10 @@
       <svg viewBox="0 0 24 24" fill="#fff"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
     </button>
   </header>
+  <div id="sesbar" class="hidden">
+    <span>Disappearing session is on. Messages sent now vanish for both of you when it ends.</span>
+    <button id="sesEnd" type="button">End</button>
+  </div>
   <button id="pinbar" class="hidden" type="button">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6l-1 6 3 3H7l3-3z"/><path d="M12 13v7"/></svg>
     <span id="pinText"></span><em id="pinCount"></em>
@@ -419,9 +438,21 @@
     <button class="act" id="mProf" type="button">Profiles and settings</button>
     <button class="act" id="mPins" type="button">Pinned messages</button>
     <button class="act" id="mExport" type="button">Export chat</button>
+    <button class="act" id="mTtl" type="button">Disappearing messages</button>
+    <button class="act" id="mSes" type="button">Start a disappearing session</button>
     <button class="act danger" id="mErase" type="button">Erase chat</button>
     <button class="act" id="logoutBtn" type="button">Sign out</button>
     <button class="act" id="mClose" type="button">Cancel</button>
+  </div>
+</div>
+
+<!-- Sign-out choice -->
+<div id="outSheet" class="shade hidden">
+  <div class="box">
+    <div class="sheetnote">Sign out of this phone. The chat stays saved unless you choose to erase it.</div>
+    <button class="act" id="outKeep" type="button">Sign out and keep the chat</button>
+    <button class="act danger" id="outErase" type="button">Sign out and erase the chat for both of you</button>
+    <button class="act" id="outClose" type="button">Cancel</button>
   </div>
 </div>
 
@@ -560,13 +591,14 @@
   var GIPHY_KEY = window.GIPHY_KEY || 'o9sMkdws363zYPGxDocg7RB3TNJJbMff', gifSeq = 0, gifLoaded = false;
   var BIG_EMOJI = ['\uD83D\uDE00','\uD83D\uDE02','\uD83E\uDD23','\uD83D\uDE0A','\uD83D\uDE0D','\uD83E\uDD70','\uD83D\uDE18','\uD83D\uDE0E','\uD83E\uDD14','\uD83D\uDE34','\uD83D\uDE2D','\uD83D\uDE21','\uD83D\uDE31','\uD83E\uDD73','\uD83D\uDE07','\uD83D\uDE48','\uD83D\uDC4D','\uD83D\uDC4E','\uD83D\uDC4F','\uD83D\uDE4F','\uD83D\uDCAA','\uD83E\uDD1D','\uD83D\uDC4B','\uD83E\uDD32','\u2764\uFE0F','\uD83D\uDC94','\uD83D\uDD25','\u2B50','\uD83C\uDF89','\uD83C\uDF39','\u2615','\uD83C\uDF19','\u2705','\u274C','\uD83D\uDCAF','\uD83C\uDF81'];
   var pendingFile = null, MAX_FILE_MB = 25, MAX_FILE = MAX_FILE_MB * 1024 * 1024;
-  var APP_VERSION = '17 Nov, version 19'; // shown on the sign-in and Profiles screens, to check both phones match
+  var APP_VERSION = '17 Nov, version 20'; // shown on the sign-in and Profiles screens, to check both phones match
   var notifyOn = false, unread = 0, audioCtx = null;
   var typedAt = 0, typingSent = false, otherTyping = false;
   var swipe = null, swipedAt = 0;
   var selecting = false, selected = {}, delArmed = 0;
   var lockByPin = false, pinTries = 0;
   var lastNames = '';
+  var ttl = 0, session = null, sweepTimer = null, TTL_CHOICES = [[0, 'Off'], [3600000, '1 hour'], [86400000, '24 hours'], [604800000, '7 days'], [7776000000, '90 days']];
   var locked = false, hiddenAt = 0, authUser = null, LOCK_AFTER = 5 * 60000, lockTries = 0, pickerUntil = 0;
   // Called just before the app hands over to the phone's picker, camera or share screen
   function handingOver() { pickerUntil = Date.now() + 5 * 60000; }
@@ -760,7 +792,7 @@
   }
 
   function showLogin(msg) {
-    closeSheet(); closePanel(); endSelect(); closeStk(); closeAttach(); closeProf(); closeCam(); closeMore();
+    closeSheet(); closePanel(); endSelect(); closeStk(); closeAttach(); closeProf(); closeCam(); closeMore(); closeOut();
     $('chat').classList.add('hidden');
     $('login').classList.remove('hidden');
     setPick(load('chatName'));
@@ -786,7 +818,7 @@
       });
     } else done();
   }
-  $('logoutBtn').addEventListener('click', function () { closeMore(); signOut(''); });
+  $('logoutBtn').addEventListener('click', function () { closeMore(); $('outSheet').classList.remove('hidden'); });
 
   // ---------- Messages ----------
   function resetList() {
@@ -844,6 +876,7 @@
   }
 
   function snippet(m) {
+    if (m.sys) return sysText(m);
     return m.text ? String(m.text).slice(0, 140) : m.stk ? 'Sticker' : m.gif ? 'GIF' : m.pic ? 'Picture' : m.voice ? 'Voice message' : m.file ? 'Document: ' + m.file.name : m.loc ? 'Location' : '';
   }
 
@@ -884,11 +917,32 @@
     return day;
   }
 
+  // The grey notes in the middle of the chat (timer changed, session started or ended)
+  function sysText(m) {
+    var who = isMe(m.name) ? 'You' : dn(m.name);
+    if (m.sys === 'ttl') {
+      if (!m.ttl) return who + ' turned off disappearing messages.';
+      var lab = ttlLabel(m.ttl);
+      return who + ' turned on disappearing messages. New messages will disappear ' + lab + ' after they are sent.';
+    }
+    if (m.sys === 'ses-on') return who + ' started a disappearing session. Messages sent now vanish for both of you when it ends.';
+    if (m.sys === 'ses-off') return who + ' ended the disappearing session. Its messages were removed.';
+    return '';
+  }
+
   function buildRow(m) {
     byId[m.id] = m;
     var d = new Date(m.t);
+    if (m.sys) {
+      var sr = document.createElement('div'); sr.className = 'row sysrow' + (m.ses ? ' ses' : '');
+      sr.setAttribute('data-row', m.id);
+      var pill = document.createElement('div'); pill.className = 'syspill';
+      pill.textContent = sysText(m) + ' \u00B7 ' + d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      sr.appendChild(pill);
+      return sr;
+    }
     var mine = isMe(m.name);
-    var row = document.createElement('div'); row.className = 'row' + (mine ? ' mine' : '');
+    var row = document.createElement('div'); row.className = 'row' + (mine ? ' mine' : '') + (m.ses ? ' ses' : '');
     row.setAttribute('data-row', m.id);
     var b = document.createElement('div'); b.className = 'bubble';
     if (m.del) {
@@ -912,6 +966,7 @@
     var tm = document.createElement('div'); tm.className = 'time';
     var pm = document.createElement('span'); pm.className = 'pinmark'; tm.appendChild(pm);
     if (m.ed) { var ed = document.createElement('span'); ed.className = 'edited'; ed.textContent = 'edited'; tm.appendChild(ed); }
+    if (m.exp) { var tmr = document.createElement('span'); tmr.className = 'timer'; tmr.textContent = '\u23F1'; tmr.title = 'Disappears ' + timeLabel(m.exp); tm.appendChild(tmr); }
     tm.appendChild(document.createTextNode(d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })));
     tm.title = d.toLocaleString();
     if (mine) {
@@ -955,7 +1010,7 @@
       if (dayKey !== lastDay) { lastDay = dayKey; list.appendChild(daySep(d)); }
       var mine = isMe(m.name);
       if (!mine && m.name) otherName = m.name;
-      if (!mine && !m.del && !forceScroll) incoming.push(m);
+      if (!mine && !m.del && !m.sys && !forceScroll) incoming.push(m);
       list.appendChild(buildRow(m));
       added = true; if (mine) mineAdded = true;
     });
@@ -1523,7 +1578,7 @@
 
   function toggleSel(id) {
     var row = rowOf(id);
-    if (!row || row.classList.contains('gone')) return;
+    if (!row || row.classList.contains('gone') || row.classList.contains('sysrow')) return;
     if (selected[id]) { delete selected[id]; row.classList.remove('sel'); }
     else { selected[id] = true; row.classList.add('sel'); }
     paintSel();
@@ -1561,6 +1616,8 @@
       var m = byId[id];
       if (!m || m.del) return;
       up['msgs/' + K(id)] = { t: m.t, name: m.name, del: true, by: me };
+      if (m.exp) up['msgs/' + K(id)].exp = m.exp;
+      if (m.ses) up['msgs/' + K(id)].ses = m.ses;
       up['pins/' + K(id)] = null;
       if (m.pic && !m.stk) files.push(m.pic);
       if (m.voice) files.push(m.voice);
@@ -1574,6 +1631,37 @@
     }).catch(function (err) { setStatus('Could not delete: ' + errText(err)); });
   });
 
+  // Takes a message off the screen completely (it disappeared, or its session ended)
+  function removeRow(id) {
+    id = Number(id);
+    var row = rowOf(id);
+    delete byId[id]; delete unsent[id];
+    items = items.filter(function (m) { return m.id !== id; });
+    var had = pins.length;
+    pins = pins.filter(function (p) { return p.id !== id; });
+    if (pins.length !== had) paintPins();
+    if (replyTo && replyTo.id === id) setReply(null);
+    if (editing && editing.id === id) setEdit(null);
+    if (selected[id]) { delete selected[id]; paintSel(); }
+    if (row) {
+      row.remove();
+      // Remove date headings that no longer have any message under them
+      var days = document.querySelectorAll('#list .day');
+      for (var i = 0; i < days.length; i++) {
+        var nx = days[i].nextElementSibling;
+        if (!nx || nx.classList.contains('day')) days[i].remove();
+      }
+      days = document.querySelectorAll('#list .day');
+      lastDay = days.length ? days[days.length - 1].getAttribute('data-day') : '';
+      if (!document.querySelector('#list .row[data-row]') && !$('empty')) {
+        var empty = document.createElement('div'); empty.id = 'empty'; empty.textContent = 'No messages yet. Say hello!';
+        $('list').appendChild(empty);
+      }
+    }
+    searchAll = null;
+    saveCacheSoon();
+  }
+
   // Swaps a message for its "deleted" note, on this phone
   function markDeleted(id, by) {
     id = Number(id);
@@ -1582,7 +1670,7 @@
     pins = pins.filter(function (p) { return p.id !== id; });
     if (pins.length !== had) paintPins();
     if (!m || m.del) return;
-    var gone = { id: m.id, t: m.t, name: m.name, del: true, by: by || '' };
+    var gone = { id: m.id, t: m.t, name: m.name, del: true, by: by || '', exp: m.exp || 0, ses: m.ses || '' };
     for (var i = 0; i < items.length; i++) { if (items[i].id === id) items[i] = gone; }
     var row = rowOf(id);
     if (row) row.parentNode.replaceChild(buildRow(gone), row); else byId[id] = gone;
@@ -1955,7 +2043,8 @@
   function toMsg(key, v) {
     v = v || {};
     var id = idOf(key), t = typeof v.t === 'number' ? v.t : nowMs();
-    if (v.del) return { id: id, t: t, name: v.name || '', del: true, by: v.by || '' };
+    if (v.del) return { id: id, t: t, name: v.name || '', del: true, by: v.by || '', exp: typeof v.exp === 'number' ? v.exp : 0, ses: v.ses || '' };
+    if (v.sys) return { id: id, t: t, name: v.name || '', sys: String(v.sys), ttl: Number(v.ttl) || 0, ses: v.ses || '' };
     var m = { id: id, t: t, name: v.name || '', text: v.text || '', pic: v.pic || '', voice: v.voice || '' };
     if (v.stk) m.stk = true;
     if (v.gif) m.gif = v.gif;
@@ -1964,13 +2053,18 @@
     if (v.rx) m.rx = v.rx;
     if (v.ed) m.ed = v.ed;
     if (v.loc && typeof v.loc.lat === 'number' && typeof v.loc.lng === 'number') m.loc = v.loc;
+    if (typeof v.exp === 'number') m.exp = v.exp;
+    if (v.ses) m.ses = String(v.ses);
     return m;
   }
 
   // What is stored in Firebase for a message (everything except its id)
   function nodeOf(m, t) {
     var n = { t: t, name: m.name };
-    if (m.del) { n.del = true; n.by = m.by || ''; return n; }
+    if (m.del) { n.del = true; n.by = m.by || ''; if (m.exp) n.exp = m.exp; if (m.ses) n.ses = m.ses; return n; }
+    if (m.sys) { n.sys = m.sys; if (m.ttl) n.ttl = m.ttl; if (m.ses) n.ses = m.ses; return n; }
+    if (m.exp) n.exp = m.exp;
+    if (m.ses) n.ses = m.ses;
     if (m.text) n.text = String(m.text).slice(0, 4000);
     if (m.pic) n.pic = m.pic;
     if (m.stk) n.stk = true;
@@ -1988,6 +2082,9 @@
   function fbSend(m) {
     var id = newId();
     m.name = me;
+    // Disappearing messages: the time it should vanish. Disappearing session: which session it belongs to.
+    if (ttl > 0 && !m.sys) m.exp = Math.floor(nowMs()) + ttl;
+    if (session && session.id && !m.sys) m.ses = session.id;
     unsent[id] = true;
     stopTyping();
     return fb.ref('msgs/' + K(id)).set(nodeOf(m, TS)).then(function () {
@@ -2011,6 +2108,7 @@
     liveRef = fb.ref('msgs').orderByKey().startAt(K(firstRow || 0));
     liveRef.on('child_added', onLive);
     liveRef.on('child_changed', onLive);
+    liveRef.on('child_removed', function (snap) { removeRow(idOf(snap.key)); });
   }
 
   function onLive(snap) {
@@ -2133,6 +2231,9 @@
     fb.ref('profile').on('value', onProfiles);
     fb.ref('meta/erased').on('value', onErased);
     fb.ref('meta/name').on('value', onName);
+    fb.ref('meta/ttl').on('value', onTtl);
+    fb.ref('meta/session').on('value', onSession);
+    clearInterval(sweepTimer); sweepTimer = setInterval(sweep, 20000); setTimeout(sweep, 3000);
     fb.ref('meta/migrated').once('value').then(function (s) {
       if (s.val() !== true) return migrate();
     }).catch(function () {}).then(loadInitial);
@@ -2142,7 +2243,18 @@
     if (!me) return;
     bootLoaded = true;
     firstFlush = true;
-    if (lastRow) { attachLive(); return; } // the saved copy is on screen; the listener brings it up to date
+    if (lastRow) {
+      // The saved copy is on screen; the listener brings it up to date.
+      attachLive();
+      // Messages that disappeared while the app was closed are taken off the saved copy.
+      var from = firstRow;
+      fb.ref('msgs').orderByKey().startAt(K(from)).once('value').then(function (snap) {
+        var have = {};
+        snap.forEach(function (c) { have[idOf(c.key)] = true; });
+        items.slice().forEach(function (m) { if (m.id >= from && !have[m.id] && !unsent[m.id]) removeRow(m.id); });
+      }).catch(function () {});
+      return;
+    }
     fb.ref('msgs').orderByKey().limitToLast(PAGE).once('value').then(function (snap) {
       var arr = [];
       snap.forEach(function (c) { arr.push(toMsg(c.key, c.val())); });
@@ -2160,11 +2272,12 @@
     if (liveRef) { liveRef.off(); liveRef = null; }
     try {
       fb.ref('.info/serverTimeOffset').off(); fb.ref('.info/connected').off();
-      fb.ref('pins').off(); fb.ref('profile').off(); fb.ref('meta/erased').off(); fb.ref('meta/name').off(); USERS.forEach(function (u) { fb.ref('state/' + u).off(); });
+      fb.ref('pins').off(); fb.ref('profile').off(); fb.ref('meta/erased').off(); fb.ref('meta/name').off(); fb.ref('meta/ttl').off(); fb.ref('meta/session').off(); USERS.forEach(function (u) { fb.ref('state/' + u).off(); });
     } catch (e) {}
     clearTimeout(addTimer); addTimer = null; addBuf = [];
     clearTimeout(cacheTimer); clearTimeout(tyTimer); clearTimeout(otTimer);
     typingAt = 0; myD = 0; myS = 0; erasedSeen = false; bootLoaded = false;
+    clearInterval(sweepTimer); sweepTimer = null; ttl = 0; session = null; paintTtl(); paintSession();
   }
 
   // ---------- Lock screen ----------
@@ -2191,7 +2304,7 @@
 
   function lockNow() {
     locked = true;
-    closeSheet(); closePanel(); closeStk(); closeAttach(); closeProf(); closeMore(); closeCam();
+    closeSheet(); closePanel(); closeStk(); closeAttach(); closeProf(); closeMore(); closeCam(); closeOut();
     stopTyping();
     setOnline();
     showLock();
@@ -2348,6 +2461,7 @@
   }
   // One line per message, like a WhatsApp export; pictures and files are named, not included
   function exportLine(m) {
+    if (m.sys) return '[' + stamp(m.t) + '] ' + sysText(m).replace(/^You /, dn(m.name) + ' ');
     var head = '[' + stamp(m.t) + '] ' + (dn(m.name) || '?') + ': ';
     if (m.del) return head + '<This message was deleted>';
     var parts = [];
@@ -2430,24 +2544,166 @@
 
   function eraseChat() {
     setStatus('Erasing the chat…');
-    fb.ref('msgs').once('value').then(function (snap) {
+    return fb.ref('msgs').once('value').then(function (snap) {
       // Pictures, voice messages and documents go to the Google Drive bin (stickers are kept)
       var files = [];
-      snap.forEach(function (c) {
-        var v = c.val() || {};
-        if (v.pic && !v.stk) files.push(v.pic);
-        if (v.voice) files.push(v.voice);
-        if (v.file && v.file.id) files.push(v.file.id);
-      });
+      snap.forEach(function (c) { files = files.concat(filesOf(c.val() || {})); });
       // meta/migrated stays, so the old Google Sheet messages are never copied back in
-      return fb.ref().update({ msgs: null, pins: null, log: null, 'meta/erased': TS }).then(function () { return files; });
+      return fb.ref().update({ msgs: null, pins: null, log: null, 'meta/session': null, 'meta/erased': TS }).then(function () { return files; });
     }).then(function (files) {
       setInfo('Chat erased.');
-      for (var i = 0; i < files.length; i += 200) {
-        api('trash', { pass: pass, ids: files.slice(i, i + 200) }).catch(function () {});
-      }
-    }).catch(function (err) { setStatus('The chat could not be erased: ' + errText(err)); });
+      trashFiles(files);
+      return true;
+    }).catch(function (err) { setStatus('The chat could not be erased: ' + errText(err)); return false; });
   }
+
+  function filesOf(v) {
+    var f = [];
+    if (v.pic && !v.stk) f.push(v.pic);
+    if (v.voice) f.push(v.voice);
+    if (v.file && v.file.id) f.push(v.file.id);
+    return f;
+  }
+  function trashFiles(files) {
+    for (var i = 0; i < files.length; i += 200) api('trash', { pass: pass, ids: files.slice(i, i + 200) }).catch(function () {});
+  }
+
+  // ---------- Disappearing messages ----------
+  function ttlLabel(v) {
+    for (var i = 0; i < TTL_CHOICES.length; i++) if (TTL_CHOICES[i][0] === v) return TTL_CHOICES[i][1];
+    return Math.round(v / 3600000) + ' hours';
+  }
+  function ttlShort(v) { return v > 86400000 ? Math.round(v / 86400000) + 'd' : Math.round(v / 3600000) + 'h'; }
+
+  function paintTtl() {
+    $('ttlBtn').classList.toggle('hidden', !ttl);
+    $('ttlChip').textContent = ttl ? '\u23F1 ' + ttlShort(ttl) : '';
+    $('mTtl').textContent = 'Disappearing messages: ' + (ttl ? ttlLabel(ttl) : 'Off');
+  }
+  function onTtl(snap) { ttl = Number(snap.val()) || 0; paintTtl(); if (panelMode === 'ttl' && !$('panel').classList.contains('hidden')) showTtl(); }
+
+  function showTtl() {
+    openPanel('ttl', 'Disappearing messages');
+    var list = $('panelList');
+    while (list.firstChild) list.removeChild(list.firstChild);
+    var box = document.createElement('div'); box.className = 'xbox';
+    var p = document.createElement('p');
+    p.textContent = 'When this is on, new messages disappear for both of you after the time you choose. Messages already sent are not changed. Either of you can change this.';
+    box.appendChild(p); list.appendChild(box);
+    TTL_CHOICES.forEach(function (c) {
+      var it = document.createElement('div'); it.className = 'item opt' + (c[0] === ttl ? ' on' : '');
+      var g = document.createElement('div'); g.className = 'grow';
+      var sp = document.createElement('span'); sp.textContent = c[1] + (c[0] === ttl ? '  \u2713' : '');
+      g.appendChild(sp); it.appendChild(g);
+      it.addEventListener('click', function () { setTtl(c[0]); });
+      list.appendChild(it);
+    });
+  }
+
+  function setTtl(v) {
+    if (v === ttl) { closePanel(); return; }
+    var id = newId(), up = {};
+    up['meta/ttl'] = v || null;
+    up['msgs/' + K(id)] = { t: TS, name: me, sys: 'ttl', ttl: v || 0 };
+    fb.ref().update(up).then(closePanel).catch(function (err) { setStatus('Could not change the timer: ' + errText(err)); });
+  }
+  $('mTtl').addEventListener('click', function () { closeMore(); showTtl(); });
+  $('ttlBtn').addEventListener('click', showTtl);
+
+  // Whichever phone is open removes messages whose time is up, for both people
+  function sweep() {
+    if (!fb || !me || locked) return;
+    var now = nowMs();
+    items.slice().forEach(function (m) { if (m.exp && m.exp <= now) removeRow(m.id); });
+    fb.ref('msgs').orderByChild('exp').startAt(1).endAt(now).once('value').then(function (snap) {
+      var up = {}, files = [], n = 0;
+      snap.forEach(function (c) {
+        var v = c.val() || {};
+        if (!(v.exp > 0 && v.exp <= now)) return;
+        up['msgs/' + c.key] = null; up['pins/' + c.key] = null; n++;
+        files = files.concat(filesOf(v));
+      });
+      if (!n) return;
+      return fb.ref().update(up).then(function () { trashFiles(files); });
+    }).catch(function () {});
+  }
+
+  // ---------- Disappearing session ----------
+  function paintSession() {
+    var on = !!(session && session.id);
+    $('sesbar').classList.toggle('hidden', !on);
+    $('mSes').textContent = on ? 'End the disappearing session' : 'Start a disappearing session';
+  }
+  function onSession(snap) {
+    var v = snap.val();
+    session = v && v.id ? v : null;
+    paintSession();
+  }
+
+  function startSession() {
+    var sid = 's' + Math.floor(nowMs()).toString(36) + Math.random().toString(36).slice(2, 6);
+    var id = newId(), up = {};
+    up['meta/session'] = { id: sid, by: me, at: TS };
+    up['msgs/' + K(id)] = { t: TS, name: me, sys: 'ses-on', ses: sid };
+    fb.ref().update(up).catch(function (err) { setStatus('Could not start the session: ' + errText(err)); });
+  }
+
+  // Ending removes every message of the session for both people, then leaves a short note
+  function endSession() {
+    if (!session || !session.id) return;
+    var sid = session.id;
+    setStatus('Ending the session…');
+    fb.ref('msgs').orderByChild('ses').equalTo(sid).once('value').then(function (snap) {
+      var up = {}, files = [];
+      snap.forEach(function (c) {
+        up['msgs/' + c.key] = null; up['pins/' + c.key] = null;
+        files = files.concat(filesOf(c.val() || {}));
+      });
+      up['meta/session'] = null;
+      up['msgs/' + K(newId())] = { t: TS, name: me, sys: 'ses-off' };
+      return fb.ref().update(up).then(function () { trashFiles(files); setStatus(''); });
+    }).catch(function (err) { setStatus('Could not end the session: ' + errText(err)); });
+  }
+
+  var sesArmed = 0;
+  $('mSes').addEventListener('click', function () {
+    if (session && session.id) { closeMore(); endSession(); return; }
+    closeMore(); startSession();
+  });
+  // The End button asks once more before removing the session's messages
+  $('sesEnd').addEventListener('click', function () {
+    if (Date.now() > sesArmed) {
+      sesArmed = Date.now() + 4000;
+      $('sesEnd').textContent = 'Tap again';
+      setTimeout(function () { if (Date.now() >= sesArmed) $('sesEnd').textContent = 'End'; }, 4100);
+      return;
+    }
+    sesArmed = 0; $('sesEnd').textContent = 'End';
+    endSession();
+  });
+
+  // ---------- Signing out: keep the chat, or erase it first ----------
+  var outArmed = 0;
+  function closeOut() {
+    $('outSheet').classList.add('hidden'); outArmed = 0;
+    $('outErase').textContent = 'Sign out and erase the chat for both of you'; $('outErase').classList.remove('armed');
+  }
+  $('outKeep').addEventListener('click', function () { closeOut(); signOut(''); });
+  $('outClose').addEventListener('click', closeOut);
+  $('outSheet').addEventListener('click', function (ev) { if (ev.target === $('outSheet')) closeOut(); });
+  $('outErase').addEventListener('click', function () {
+    if (Date.now() > outArmed) {
+      outArmed = Date.now() + 5000;
+      $('outErase').textContent = 'Tap again to erase every message for both of you and sign out';
+      $('outErase').classList.add('armed');
+      setTimeout(function () {
+        if (outArmed && Date.now() >= outArmed) { outArmed = 0; $('outErase').textContent = 'Sign out and erase the chat for both of you'; $('outErase').classList.remove('armed'); }
+      }, 5100);
+      return;
+    }
+    closeOut();
+    eraseChat().then(function (ok) { if (ok) signOut(''); });
+  });
 
   // ---------- Main menu ----------
   function closeMore() {
@@ -2555,7 +2811,7 @@
       swipe = null;
       if (selecting || ev.touches.length !== 1 || ev.target.closest('audio')) return;
       var row = ev.target.closest('.row');
-      if (!row || !row.getAttribute('data-row') || row.classList.contains('gone')) return;
+      if (!row || !row.getAttribute('data-row') || row.classList.contains('gone') || row.classList.contains('sysrow')) return;
       swipe = { row: row, b: row.querySelector('.bubble'), x: ev.touches[0].clientX, y: ev.touches[0].clientY, dx: 0, on: false };
     }, { passive: true });
     list.addEventListener('touchmove', function (ev) {
